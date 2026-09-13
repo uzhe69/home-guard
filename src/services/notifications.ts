@@ -1,9 +1,10 @@
 import * as Notifications from 'expo-notifications';
 
 import { sendTurnOffCommand } from '@/services/firebase';
-import type { NotificationActionResult } from '@/types/home-guard';
+import type { DeviceType, NotificationActionResult } from '@/types/home-guard';
 
 export const AC_REMINDER_CATEGORY = 'HOME_GUARD_AC_REMINDER';
+export const STOVE_REMINDER_CATEGORY = 'HOME_GUARD_STOVE_REMINDER';
 export const TURN_OFF_ACTION = 'TURN_OFF';
 export const KEEP_ON_ACTION = 'KEEP_ON';
 
@@ -12,6 +13,23 @@ type ScheduleAcReminderOptions = {
   deviceId: string;
   delayMinutes?: number;
 };
+
+type ScheduleStoveReminderOptions = {
+  deviceId: string;
+  reason: 'away' | 'inactivity';
+  inactiveMinutes?: number;
+};
+
+const reminderActions: Notifications.NotificationAction[] = [
+  {
+    identifier: TURN_OFF_ACTION,
+    buttonTitle: 'Turn It Off',
+  },
+  {
+    identifier: KEEP_ON_ACTION,
+    buttonTitle: 'Keep It On',
+  },
+];
 
 function hasNotificationPermission(
   permissions: Notifications.NotificationPermissionsStatus,
@@ -32,15 +50,9 @@ export async function configureNotifications(): Promise<boolean> {
     }),
   });
 
-  await Notifications.setNotificationCategoryAsync(AC_REMINDER_CATEGORY, [
-    {
-      identifier: TURN_OFF_ACTION,
-      buttonTitle: 'Turn It Off',
-    },
-    {
-      identifier: KEEP_ON_ACTION,
-      buttonTitle: 'Keep It On',
-    },
+  await Promise.all([
+    Notifications.setNotificationCategoryAsync(AC_REMINDER_CATEGORY, reminderActions),
+    Notifications.setNotificationCategoryAsync(STOVE_REMINDER_CATEGORY, reminderActions),
   ]);
 
   const currentPermissions = await Notifications.getPermissionsAsync();
@@ -71,7 +83,7 @@ export async function scheduleAcReminder({
       body: `Your room is ${temperatureCelsius.toFixed(1)}°C and no one is home.`,
       sound: 'default',
       categoryIdentifier: AC_REMINDER_CATEGORY,
-      data: { deviceId, temperatureCelsius },
+      data: { deviceId, deviceType: 'ac', temperatureCelsius },
     },
     trigger:
       delaySeconds > 0
@@ -80,6 +92,28 @@ export async function scheduleAcReminder({
             seconds: delaySeconds,
           }
         : null,
+  });
+}
+
+export function scheduleStoveReminder({
+  deviceId,
+  reason,
+  inactiveMinutes = 0,
+}: ScheduleStoveReminderOptions): Promise<string> {
+  const body =
+    reason === 'away'
+      ? 'The stove is active and everyone has left the home radius.'
+      : `The stove is active, but no kitchen motion was detected for ${inactiveMinutes} minutes.`;
+
+  return Notifications.scheduleNotificationAsync({
+    content: {
+      title: reason === 'away' ? 'Your stove is still on' : 'Check your kitchen',
+      body,
+      sound: 'default',
+      categoryIdentifier: STOVE_REMINDER_CATEGORY,
+      data: { deviceId, deviceType: 'stove', reason },
+    },
+    trigger: null,
   });
 }
 
@@ -94,25 +128,31 @@ function getResponseDeviceId(response: Notifications.NotificationResponse) {
   return typeof deviceId === 'string' ? deviceId : undefined;
 }
 
+function getResponseDeviceType(response: Notifications.NotificationResponse): DeviceType | undefined {
+  const deviceType = response.notification.request.content.data?.deviceType;
+  return deviceType === 'ac' || deviceType === 'stove' ? deviceType : undefined;
+}
+
 export async function processNotificationResponse(
   response: Notifications.NotificationResponse,
 ): Promise<NotificationActionResult> {
   const deviceId = getResponseDeviceId(response);
+  const deviceType = getResponseDeviceType(response);
 
   if (response.actionIdentifier === TURN_OFF_ACTION && deviceId) {
-    await sendTurnOffCommand(deviceId, 'notification');
-    return { action: 'turn_off', deviceId };
+    await sendTurnOffCommand(deviceId, 'notification', deviceType);
+    return { action: 'turn_off', deviceId, deviceType };
   }
 
   if (response.actionIdentifier === KEEP_ON_ACTION) {
-    return { action: 'keep_on', deviceId };
+    return { action: 'keep_on', deviceId, deviceType };
   }
 
   if (response.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) {
-    return { action: 'opened', deviceId };
+    return { action: 'opened', deviceId, deviceType };
   }
 
-  return { action: 'ignored', deviceId };
+  return { action: 'ignored', deviceId, deviceType };
 }
 
 export async function processLastNotificationResponse(): Promise<NotificationActionResult | null> {

@@ -10,12 +10,14 @@ import {
   type Database,
 } from 'firebase/database';
 
-import { DEMO_DEVICE_SNAPSHOT } from '@/constants/demo';
+import { DEMO_AC_SNAPSHOT, DEMO_STOVE_SNAPSHOT } from '@/constants/demo';
 import type {
+  AcDeviceSnapshot,
   DeviceCommand,
   DeviceCommandSource,
   DeviceCommandValue,
-  DeviceSnapshot,
+  DeviceType,
+  StoveDeviceSnapshot,
 } from '@/types/home-guard';
 
 type FirebaseSession = {
@@ -30,9 +32,19 @@ type FirebaseDeviceValue = {
   lastSeenAt?: number;
   temperature?: number;
   temperatureCelsius?: number;
+  stoveActive?: boolean;
+  activeBurners?: number;
+  gasFlowLitersPerMinute?: number;
+  activeSince?: number;
+  lastMotionAt?: number;
   telemetry?: {
     temperatureCelsius?: number;
     lastSeenAt?: number;
+    stoveActive?: boolean;
+    activeBurners?: number;
+    gasFlowLitersPerMinute?: number;
+    activeSince?: number;
+    lastMotionAt?: number;
   };
   commands?: {
     latest?: Partial<DeviceCommand>;
@@ -50,8 +62,10 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-const mockListeners = new Set<(snapshot: DeviceSnapshot) => void>();
-let mockSnapshot: DeviceSnapshot = { ...DEMO_DEVICE_SNAPSHOT };
+const mockAcListeners = new Set<(snapshot: AcDeviceSnapshot) => void>();
+const mockStoveListeners = new Set<(snapshot: StoveDeviceSnapshot) => void>();
+let mockAcSnapshot: AcDeviceSnapshot = { ...DEMO_AC_SNAPSHOT };
+let mockStoveSnapshot: StoveDeviceSnapshot = { ...DEMO_STOVE_SNAPSHOT };
 let sessionPromise: Promise<FirebaseSession> | null = null;
 
 export function isFirebaseConfigured() {
@@ -125,10 +139,10 @@ function parseCommand(value: unknown): DeviceCommand | null {
   };
 }
 
-function parseDeviceSnapshot(
+function parseAcSnapshot(
   deviceId: string,
   value: FirebaseDeviceValue | null,
-): DeviceSnapshot {
+): AcDeviceSnapshot {
   const temperature =
     value?.telemetry?.temperatureCelsius ??
     value?.temperatureCelsius ??
@@ -137,10 +151,11 @@ function parseDeviceSnapshot(
 
   return {
     deviceId,
+    deviceType: 'ac',
     roomTemperatureCelsius:
       typeof temperature === 'number' && Number.isFinite(temperature)
         ? temperature
-        : DEMO_DEVICE_SNAPSHOT.roomTemperatureCelsius,
+        : DEMO_AC_SNAPSHOT.roomTemperatureCelsius,
     connectionStatus:
       value?.connectionStatus === 'offline' || value?.connected === false
         ? 'offline'
@@ -152,17 +167,64 @@ function parseDeviceSnapshot(
   };
 }
 
+function parseNumber(value: unknown, fallback: number) {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+function parseStoveSnapshot(
+  deviceId: string,
+  value: FirebaseDeviceValue | null,
+): StoveDeviceSnapshot {
+  const telemetry = value?.telemetry;
+  const stoveActive = telemetry?.stoveActive ?? value?.stoveActive;
+  const activeSince = telemetry?.activeSince ?? value?.activeSince;
+
+  return {
+    deviceId,
+    deviceType: 'stove',
+    isActive: typeof stoveActive === 'boolean' ? stoveActive : DEMO_STOVE_SNAPSHOT.isActive,
+    activeBurners: parseNumber(telemetry?.activeBurners ?? value?.activeBurners, 0),
+    gasFlowLitersPerMinute: parseNumber(
+      telemetry?.gasFlowLitersPerMinute ?? value?.gasFlowLitersPerMinute,
+      0,
+    ),
+    activeSince:
+      typeof activeSince === 'number' && Number.isFinite(activeSince) ? activeSince : null,
+    lastMotionAt: parseTimestamp(
+      telemetry?.lastMotionAt ?? value?.lastMotionAt,
+      Date.now(),
+    ),
+    connectionStatus:
+      value?.connectionStatus === 'offline' || value?.connected === false
+        ? 'offline'
+        : 'online',
+    lastSeenAt: parseTimestamp(telemetry?.lastSeenAt ?? value?.lastSeenAt, Date.now()),
+    lastCommand: parseCommand(value?.commands?.latest ?? value?.lastCommand ?? null),
+  };
+}
+
 export async function getDeviceSnapshot(
   deviceId: string,
-): Promise<DeviceSnapshot> {
+): Promise<AcDeviceSnapshot> {
   const session = await getFirebaseSession();
 
   if (!session) {
-    return { ...mockSnapshot, deviceId };
+    return { ...mockAcSnapshot, deviceId };
   }
 
   const snapshot = await get(ref(session.database, `devices/${deviceId}`));
-  return parseDeviceSnapshot(deviceId, snapshot.val() as FirebaseDeviceValue | null);
+  return parseAcSnapshot(deviceId, snapshot.val() as FirebaseDeviceValue | null);
+}
+
+export async function getStoveSnapshot(deviceId: string): Promise<StoveDeviceSnapshot> {
+  const session = await getFirebaseSession();
+
+  if (!session) {
+    return { ...mockStoveSnapshot, deviceId };
+  }
+
+  const snapshot = await get(ref(session.database, `devices/${deviceId}`));
+  return parseStoveSnapshot(deviceId, snapshot.val() as FirebaseDeviceValue | null);
 }
 
 export async function getRoomTemperature(deviceId: string): Promise<number> {
@@ -172,12 +234,12 @@ export async function getRoomTemperature(deviceId: string): Promise<number> {
 
 export function subscribeToDevice(
   deviceId: string,
-  listener: (snapshot: DeviceSnapshot) => void,
+  listener: (snapshot: AcDeviceSnapshot) => void,
 ): () => void {
   if (!isFirebaseConfigured()) {
-    mockListeners.add(listener);
-    listener({ ...mockSnapshot, deviceId });
-    return () => mockListeners.delete(listener);
+    mockAcListeners.add(listener);
+    listener({ ...mockAcSnapshot, deviceId });
+    return () => mockAcListeners.delete(listener);
   }
 
   let unsubscribe = () => {};
@@ -190,8 +252,35 @@ export function subscribeToDevice(
 
     unsubscribe = onValue(ref(session.database, `devices/${deviceId}`), (value) => {
       listener(
-        parseDeviceSnapshot(deviceId, value.val() as FirebaseDeviceValue | null),
+        parseAcSnapshot(deviceId, value.val() as FirebaseDeviceValue | null),
       );
+    });
+  });
+
+  return () => {
+    cancelled = true;
+    unsubscribe();
+  };
+}
+
+export function subscribeToStoveDevice(
+  deviceId: string,
+  listener: (snapshot: StoveDeviceSnapshot) => void,
+): () => void {
+  if (!isFirebaseConfigured()) {
+    mockStoveListeners.add(listener);
+    listener({ ...mockStoveSnapshot, deviceId });
+    return () => mockStoveListeners.delete(listener);
+  }
+
+  let unsubscribe = () => {};
+  let cancelled = false;
+
+  void getFirebaseSession().then((session) => {
+    if (!session || cancelled) return;
+
+    unsubscribe = onValue(ref(session.database, `devices/${deviceId}`), (value) => {
+      listener(parseStoveSnapshot(deviceId, value.val() as FirebaseDeviceValue | null));
     });
   });
 
@@ -205,6 +294,7 @@ export async function sendDeviceCommand(
   deviceId: string,
   value: DeviceCommandValue,
   source: DeviceCommandSource = 'app',
+  deviceType: DeviceType = 'ac',
 ): Promise<DeviceCommand> {
   const session = await getFirebaseSession();
   const command: DeviceCommand = {
@@ -214,13 +304,26 @@ export async function sendDeviceCommand(
   };
 
   if (!session) {
-    mockSnapshot = {
-      ...mockSnapshot,
-      deviceId,
-      lastCommand: command,
-      lastSeenAt: Date.now(),
-    };
-    mockListeners.forEach((listener) => listener({ ...mockSnapshot }));
+    if (deviceType === 'stove') {
+      mockStoveSnapshot = {
+        ...mockStoveSnapshot,
+        isActive: value === 'ON',
+        activeBurners: value === 'ON' ? Math.max(1, mockStoveSnapshot.activeBurners) : 0,
+        gasFlowLitersPerMinute: value === 'ON' ? Math.max(1.2, mockStoveSnapshot.gasFlowLitersPerMinute) : 0,
+        activeSince: value === 'ON' ? Date.now() : null,
+        lastCommand: command,
+        lastSeenAt: Date.now(),
+      };
+      mockStoveListeners.forEach((listener) => listener({ ...mockStoveSnapshot }));
+    } else {
+      mockAcSnapshot = {
+        ...mockAcSnapshot,
+        deviceId,
+        lastCommand: command,
+        lastSeenAt: Date.now(),
+      };
+      mockAcListeners.forEach((listener) => listener({ ...mockAcSnapshot }));
+    }
     return command;
   }
 
@@ -237,23 +340,48 @@ export async function sendDeviceCommand(
 export function sendTurnOffCommand(
   deviceId: string,
   source: DeviceCommandSource = 'app',
+  deviceType: DeviceType = 'ac',
 ) {
-  return sendDeviceCommand(deviceId, 'OFF', source);
+  return sendDeviceCommand(deviceId, 'OFF', source, deviceType);
 }
 
 export async function setMockTemperature(
   temperatureCelsius: number,
-): Promise<DeviceSnapshot> {
+): Promise<AcDeviceSnapshot> {
   if (!Number.isFinite(temperatureCelsius)) {
     throw new Error('Temperature must be a finite number.');
   }
 
-  mockSnapshot = {
-    ...mockSnapshot,
+  mockAcSnapshot = {
+    ...mockAcSnapshot,
     roomTemperatureCelsius: temperatureCelsius,
     connectionStatus: 'online',
     lastSeenAt: Date.now(),
   };
-  mockListeners.forEach((listener) => listener({ ...mockSnapshot }));
-  return { ...mockSnapshot };
+  mockAcListeners.forEach((listener) => listener({ ...mockAcSnapshot }));
+  return { ...mockAcSnapshot };
+}
+
+export async function setMockStoveState(
+  deviceId: string,
+  isActive: boolean,
+  lastMotionAt = Date.now(),
+): Promise<StoveDeviceSnapshot> {
+  mockStoveSnapshot = {
+    ...mockStoveSnapshot,
+    deviceId,
+    isActive,
+    activeBurners: isActive ? 1 : 0,
+    gasFlowLitersPerMinute: isActive ? 1.4 : 0,
+    activeSince: isActive ? (mockStoveSnapshot.activeSince ?? Date.now()) : null,
+    lastMotionAt,
+    lastSeenAt: Date.now(),
+    lastCommand: {
+      value: isActive ? 'ON' : 'OFF',
+      requestedAt: Date.now(),
+      source: 'demo',
+    },
+  };
+  mockStoveListeners.forEach((listener) => listener({ ...mockStoveSnapshot }));
+  return { ...mockStoveSnapshot };
 }

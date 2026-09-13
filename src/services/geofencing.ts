@@ -1,8 +1,8 @@
 import * as Location from 'expo-location';
 import * as TaskManager from 'expo-task-manager';
 
-import { getRoomTemperature } from '@/services/firebase';
-import { scheduleAcReminder } from '@/services/notifications';
+import { getRoomTemperature, getStoveSnapshot } from '@/services/firebase';
+import { scheduleAcReminder, scheduleStoveReminder } from '@/services/notifications';
 import { loadSettings } from '@/services/settings';
 import type { HomeSettings } from '@/types/home-guard';
 
@@ -16,22 +16,38 @@ type GeofencingTaskData = {
 
 export async function processDeparture(
   settings?: HomeSettings,
-): Promise<string | null> {
+): Promise<string[]> {
   const activeSettings = settings ?? (await loadSettings());
   if (!activeSettings.notificationsEnabled) {
-    return null;
+    return [];
   }
 
-  const temperatureCelsius = await getRoomTemperature(activeSettings.deviceId);
-  if (temperatureCelsius >= activeSettings.temperatureThresholdCelsius) {
-    return null;
+  const [temperatureCelsius, stove] = await Promise.all([
+    getRoomTemperature(activeSettings.acDeviceId),
+    getStoveSnapshot(activeSettings.stoveDeviceId),
+  ]);
+  const reminders: Promise<string>[] = [];
+
+  if (temperatureCelsius < activeSettings.temperatureThresholdCelsius) {
+    reminders.push(
+      scheduleAcReminder({
+        temperatureCelsius,
+        deviceId: activeSettings.acDeviceId,
+        delayMinutes: activeSettings.reminderDelayMinutes,
+      }),
+    );
   }
 
-  return scheduleAcReminder({
-    temperatureCelsius,
-    deviceId: activeSettings.deviceId,
-    delayMinutes: activeSettings.reminderDelayMinutes,
-  });
+  if (stove.isActive) {
+    reminders.push(
+      scheduleStoveReminder({
+        deviceId: activeSettings.stoveDeviceId,
+        reason: 'away',
+      }),
+    );
+  }
+
+  return Promise.all(reminders);
 }
 
 if (!TaskManager.isTaskDefined(HOME_GEOFENCE_TASK)) {

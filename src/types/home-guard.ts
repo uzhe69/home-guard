@@ -10,11 +10,14 @@ export type HomeSettings = {
   reminderDelayMinutes: number;
   temperatureThresholdCelsius: number;
   notificationsEnabled: boolean;
-  deviceId: string;
+  acDeviceId: string;
+  stoveDeviceId: string;
+  kitchenInactivityMinutes: number;
   setupComplete: boolean;
 };
 
 export type ConnectionStatus = 'online' | 'offline';
+export type DeviceType = 'ac' | 'stove';
 export type DeviceCommandValue = 'ON' | 'OFF';
 export type DeviceCommandSource = 'app' | 'notification' | 'demo';
 
@@ -24,15 +27,29 @@ export type DeviceCommand = {
   source: DeviceCommandSource;
 };
 
-export type DeviceSnapshot = {
+export type BaseDeviceSnapshot = {
   deviceId: string;
-  roomTemperatureCelsius: number;
   connectionStatus: ConnectionStatus;
   lastSeenAt: number;
   lastCommand: DeviceCommand | null;
 };
 
+export type AcDeviceSnapshot = BaseDeviceSnapshot & {
+  deviceType: 'ac';
+  roomTemperatureCelsius: number;
+};
+
+export type StoveDeviceSnapshot = BaseDeviceSnapshot & {
+  deviceType: 'stove';
+  isActive: boolean;
+  activeBurners: number;
+  gasFlowLitersPerMinute: number;
+  activeSince: number | null;
+  lastMotionAt: number;
+};
+
 export type NotificationActionResult = {
   action: 'turn_off' | 'keep_on' | 'opened' | 'ignored';
   deviceId?: string;
+  deviceType?: DeviceType;
 };
