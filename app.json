@@ -15,6 +15,7 @@
       "infoPlist": {
         "UIBackgroundModes": ["location"],
         "NSLocationWhenInUseUsageDescription": "AC Guard uses your location to set your home radius.",
+        "NSLocationAlwaysUsageDescription": "AC Guard monitors when you leave home so it can check your AC.",
         "NSLocationAlwaysAndWhenInUseUsageDescription": "AC Guard monitors when you leave home so it can check your AC."
       }
     },
@@ -48,6 +49,7 @@
         "expo-location",
         {
           "locationWhenInUsePermission": "AC Guard uses your location to set your home radius.",
+          "locationAlwaysPermission": "AC Guard monitors when you leave home so it can check your AC.",
           "locationAlwaysAndWhenInUsePermission": "AC Guard monitors when you leave home so it can check your AC.",
           "isIosBackgroundLocationEnabled": true
         }
