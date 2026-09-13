@@ -4,10 +4,10 @@ import * as TaskManager from 'expo-task-manager';
 import { getRoomTemperature } from '@/services/firebase';
 import { scheduleAcReminder } from '@/services/notifications';
 import { loadSettings } from '@/services/settings';
-import type { HomeSettings } from '@/types/ac-guard';
+import type { HomeSettings } from '@/types/home-guard';
 
-export const HOME_GEOFENCE_TASK = 'ac-guard-home-geofence';
-const HOME_REGION_IDENTIFIER = 'ac-guard-home';
+export const HOME_GEOFENCE_TASK = 'home-guard-geofence';
+const HOME_REGION_IDENTIFIER = 'home-guard-home';
 
 type GeofencingTaskData = {
   eventType: Location.GeofencingEventType;

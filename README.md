@@ -1,6 +1,6 @@
-# AC Guard
+# Home Guard
 
-AC Guard is an iOS-first Expo app that watches a home geofence, checks a room sensor, and lets the user send an AC `OFF` command from an actionable notification. It includes a complete mock mode, so the onboarding, dashboard, charts, commands, and notification flow can be demonstrated without hardware or a Firebase project.
+Home Guard is an iOS-first Expo app that watches a home geofence, checks connected appliance sensors, and lets the user act on alerts from anywhere. It includes a complete mock mode, so the onboarding, dashboards, charts, commands, and notification flow can be demonstrated without hardware or a Firebase project.
 
 ## Stack
 
@@ -22,7 +22,7 @@ npx expo run:ios --device
 
 The native project is generated automatically and intentionally ignored by Git. This app requires a Development Build; background geofencing and actionable notification behavior cannot be validated fully in Expo Go.
 
-On the phone, allow notifications and choose **Always Allow** for location when prompted. If iOS initially offers only **While Using the App**, enable **Always** later under Settings → Privacy & Security → Location Services → AC Guard.
+On the phone, allow notifications and choose **Always Allow** for location when prompted. If iOS initially offers only **While Using the App**, enable **Always** later under Settings → Privacy & Security → Location Services → Home Guard.
 
 ## Demo mode
 
@@ -45,12 +45,12 @@ Copy `.env.example` to `.env.local` and add the web-app configuration from the F
 cp .env.example .env.local
 ```
 
-Enable Anonymous Authentication and create a Realtime Database. AC Guard reads this shape:
+Enable Anonymous Authentication and create a Realtime Database. Home Guard reads this shape:
 
 ```json
 {
   "devices": {
-    "bedroom-ac-guard": {
+    "bedroom-ac": {
       "connected": true,
       "telemetry": {
         "temperatureCelsius": 22.4,
@@ -89,7 +89,7 @@ Use device ownership claims and narrower telemetry/command rules before producti
 ## Background flow
 
 1. The home settings are saved in iOS Keychain-backed SecureStore.
-2. Expo Location registers a region with the module-scope `ac-guard-home-geofence` task.
+2. Expo Location registers a region with the module-scope `home-guard-geofence` task.
 3. On exit, the task reads the latest Firebase temperature while iOS grants background execution time.
 4. If the room is below the configured threshold, a local notification is scheduled for the reminder delay.
 5. **Turn It Off** writes `OFF` to `devices/{deviceId}/commands/latest`; **Keep It On** dismisses the reminder.

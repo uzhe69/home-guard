@@ -1,4 +1,4 @@
-import type { DeviceSnapshot, HomeSettings } from '@/types/ac-guard';
+import type { DeviceSnapshot, HomeSettings } from '@/types/home-guard';
 
 export const DEFAULT_SETTINGS: HomeSettings = {
   homeLocation: {
@@ -10,7 +10,7 @@ export const DEFAULT_SETTINGS: HomeSettings = {
   reminderDelayMinutes: 5,
   temperatureThresholdCelsius: 26,
   notificationsEnabled: true,
-  deviceId: 'bedroom-ac-guard',
+  deviceId: 'bedroom-ac',
   setupComplete: false,
 };
 

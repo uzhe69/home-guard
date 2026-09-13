@@ -1,9 +1,9 @@
 import * as SecureStore from 'expo-secure-store';
 
 import { DEFAULT_SETTINGS } from '@/constants/demo';
-import type { HomeSettings } from '@/types/ac-guard';
+import type { HomeSettings } from '@/types/home-guard';
 
-const SETTINGS_KEY = 'ac_guard.settings.v1';
+const SETTINGS_KEY = 'home_guard.settings.v2';
 const secureStoreOptions: SecureStore.SecureStoreOptions = {
   keychainAccessible: SecureStore.AFTER_FIRST_UNLOCK,
 };

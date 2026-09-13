@@ -170,7 +170,7 @@ export default function SettingsScreen() {
               <Radio color={colors.primary} size={21} />
             </View>
             <View className="ml-3 flex-1">
-              <Text className="text-[14px] font-semibold text-ink">Bedroom AC Guard</Text>
+              <Text className="text-[14px] font-semibold text-ink">Bedroom AC sensor</Text>
               <Text className="mt-0.5 text-[12px] text-primary">Connected • device-bedroom</Text>
             </View>
           </Card>

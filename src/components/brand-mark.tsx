@@ -14,7 +14,7 @@ export function BrandMark({ compact = false }: { compact?: boolean }) {
         </View>
       </View>
       <Text className={compact ? 'text-[17px] font-bold tracking-[-0.4px] text-ink' : 'text-[22px] font-bold tracking-[-0.6px] text-ink'}>
-        AC Guard
+        Home Guard
       </Text>
     </View>
   );

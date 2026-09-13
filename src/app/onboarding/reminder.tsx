@@ -76,7 +76,7 @@ export default function ReminderSetupScreen() {
             <Radio color={colors.primary} size={23} />
           </View>
           <View className="ml-3 flex-1">
-            <Text className="text-[16px] font-semibold text-ink">Bedroom AC Guard</Text>
+            <Text className="text-[16px] font-semibold text-ink">Bedroom AC sensor</Text>
             <View className="mt-1 flex-row items-center gap-1.5">
               <View className="h-2 w-2 rounded-full bg-fresh" />
               <Text className="text-[13px] font-medium text-primary">Demo device connected</Text>
@@ -101,7 +101,7 @@ export default function ReminderSetupScreen() {
           }}
         />
         <Text className="mt-3 text-center text-[12px] leading-4 text-slate">
-          iOS will ask for Always Location and notification access so AC Guard can work while closed.
+          iOS will ask for Always Location and notification access so Home Guard can work while closed.
         </Text>
       </View>
     </SafeAreaView>

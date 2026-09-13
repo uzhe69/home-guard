@@ -92,7 +92,7 @@ export default function DashboardScreen() {
           <View className="flex-row items-center rounded-[20px] bg-mintSoft px-5 py-4">
             <Wifi color={colors.primary} size={21} />
             <View className="ml-3 flex-1">
-              <Text className="text-[14px] font-semibold text-primary">AC Guard is {connectionStatus === 'online' ? 'online' : connectionStatus}</Text>
+              <Text className="text-[14px] font-semibold text-primary">AC sensor is {connectionStatus === 'online' ? 'online' : connectionStatus}</Text>
               <Text className="mt-0.5 text-[12px] text-slate">Bedroom sensor • {lastUpdatedLabel}</Text>
             </View>
             {connectionStatus === 'online' && <StatusDot />}

@@ -19,10 +19,10 @@ export default function WelcomeScreen() {
       <View className="flex-1 justify-center">
         <Animated.View entering={FadeInDown.delay(100).duration(650)}>
           <Text className="text-center text-[38px] font-bold leading-[43px] tracking-[-1.5px] text-ink">
-            Never wonder if you left the AC on.
+            Never wonder what you left on.
           </Text>
           <Text className="mx-3 mt-4 text-center text-[17px] leading-6 text-slate">
-            AC Guard watches your home when you step away—and lets you switch it off from anywhere.
+            Home Guard watches your AC and stove when you step away—and lets you act from anywhere.
           </Text>
         </Animated.View>
         <Animated.View entering={FadeInDown.delay(220).duration(700)} className="mt-8">

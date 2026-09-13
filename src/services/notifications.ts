@@ -1,9 +1,9 @@
 import * as Notifications from 'expo-notifications';
 
 import { sendTurnOffCommand } from '@/services/firebase';
-import type { NotificationActionResult } from '@/types/ac-guard';
+import type { NotificationActionResult } from '@/types/home-guard';
 
-export const AC_REMINDER_CATEGORY = 'AC_GUARD_REMINDER';
+export const AC_REMINDER_CATEGORY = 'HOME_GUARD_AC_REMINDER';
 export const TURN_OFF_ACTION = 'TURN_OFF';
 export const KEEP_ON_ACTION = 'KEEP_ON';
 

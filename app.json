@@ -1,22 +1,22 @@
 {
   "expo": {
-    "name": "AC Guard",
-    "slug": "ac-guard",
+    "name": "Home Guard",
+    "slug": "home-guard",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "acguard",
+    "scheme": "homeguard",
     "userInterfaceStyle": "light",
     "backgroundColor": "#F8FAF8",
     "ios": {
       "icon": "./assets/expo.icon",
-      "bundleIdentifier": "com.acguard.mobile",
+      "bundleIdentifier": "com.homeguard.mobile",
       "supportsTablet": false,
       "infoPlist": {
         "UIBackgroundModes": ["location"],
-        "NSLocationWhenInUseUsageDescription": "AC Guard uses your location to set your home radius.",
-        "NSLocationAlwaysUsageDescription": "AC Guard monitors when you leave home so it can check your AC.",
-        "NSLocationAlwaysAndWhenInUseUsageDescription": "AC Guard monitors when you leave home so it can check your AC."
+        "NSLocationWhenInUseUsageDescription": "Home Guard uses your location to set your home radius.",
+        "NSLocationAlwaysUsageDescription": "Home Guard monitors when you leave so it can check active appliances.",
+        "NSLocationAlwaysAndWhenInUseUsageDescription": "Home Guard monitors when you leave so it can check active appliances."
       }
     },
     "android": {
@@ -27,7 +27,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.acguard.mobile"
+      "package": "com.homeguard.mobile"
     },
     "web": {
       "output": "static",
@@ -48,9 +48,9 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "AC Guard uses your location to set your home radius.",
-          "locationAlwaysPermission": "AC Guard monitors when you leave home so it can check your AC.",
-          "locationAlwaysAndWhenInUsePermission": "AC Guard monitors when you leave home so it can check your AC.",
+          "locationWhenInUsePermission": "Home Guard uses your location to set your home radius.",
+          "locationAlwaysPermission": "Home Guard monitors when you leave so it can check active appliances.",
+          "locationAlwaysAndWhenInUsePermission": "Home Guard monitors when you leave so it can check active appliances.",
           "isIosBackgroundLocationEnabled": true
         }
       ],

@@ -16,7 +16,7 @@ import type {
   DeviceCommandSource,
   DeviceCommandValue,
   DeviceSnapshot,
-} from '@/types/ac-guard';
+} from '@/types/home-guard';
 
 type FirebaseSession = {
   app: FirebaseApp;

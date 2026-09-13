@@ -17,7 +17,7 @@ import {
   sendAcReminderNow,
 } from '@/services/notifications';
 import { loadSettings, resetSettings, saveSettings } from '@/services/settings';
-import type { DeviceSnapshot, HomeSettings } from '@/types/ac-guard';
+import type { DeviceSnapshot, HomeSettings } from '@/types/home-guard';
 
 type AppContextValue = {
   ready: boolean;
