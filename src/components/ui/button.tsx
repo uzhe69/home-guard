@@ -13,6 +13,8 @@ const buttonVariants = cva('h-14 flex-row items-center justify-center gap-2 roun
       secondary: 'border border-primary bg-white',
       subtle: 'bg-mint',
       ghost: 'bg-transparent',
+      stove: 'bg-ember',
+      stoveSecondary: 'border border-ember bg-white',
     },
   },
   defaultVariants: { variant: 'primary' },
@@ -25,6 +27,8 @@ const labelVariants = cva('text-[16px] font-semibold', {
       secondary: 'text-primary',
       subtle: 'text-primary',
       ghost: 'text-primary',
+      stove: 'text-white',
+      stoveSecondary: 'text-ember',
     },
   },
   defaultVariants: { variant: 'primary' },
@@ -72,7 +76,7 @@ export function Button({
           onPressOut?.(event);
         }}
         {...props}>
-        {loading ? <ActivityIndicator color={variant === 'primary' ? 'white' : '#087A55'} /> : left}
+        {loading ? <ActivityIndicator color={variant === 'primary' || variant === 'stove' ? 'white' : '#087A55'} /> : left}
         <Text className={labelVariants({ variant })}>{label}</Text>
       </Pressable>
     </Animated.View>

@@ -1,6 +1,6 @@
 import { Tabs } from 'expo-router';
 import { SymbolView, type SymbolViewProps } from 'expo-symbols';
-import { ChartNoAxesCombined, House, Settings } from 'lucide-react-native';
+import { ChartNoAxesCombined, Flame, House, Settings } from 'lucide-react-native';
 import React from 'react';
 import { Platform, View } from 'react-native';
 
@@ -10,19 +10,29 @@ function TabIcon({
   name,
   fallback,
   focused,
+  tone = 'primary',
 }: {
   name: SymbolViewProps['name'];
   fallback: React.ReactNode;
   focused: boolean;
+  tone?: 'primary' | 'stove';
 }) {
+  const accent = tone === 'stove' ? colors.ember : colors.primary;
   return (
-    <View className={focused ? 'h-9 w-14 items-center justify-center rounded-2xl bg-mint' : 'h-9 w-14 items-center justify-center'}>
+    <View
+      className={
+        focused
+          ? tone === 'stove'
+            ? 'h-9 w-14 items-center justify-center rounded-2xl bg-warmth'
+            : 'h-9 w-14 items-center justify-center rounded-2xl bg-mint'
+          : 'h-9 w-14 items-center justify-center'
+      }>
       {Platform.OS === 'ios' ? (
         <SymbolView
           animationSpec={focused ? { effect: { type: 'bounce' }, speed: 1.2 } : undefined}
           name={name}
           size={21}
-          tintColor={focused ? colors.primary : colors.slate}
+          tintColor={focused ? accent : colors.slate}
           weight={focused ? 'semibold' : 'regular'}
         />
       ) : (
@@ -54,6 +64,16 @@ export default function TabsLayout() {
           title: 'Home',
           tabBarIcon: ({ focused }) => (
             <TabIcon fallback={<House color={focused ? colors.primary : colors.slate} size={21} />} focused={focused} name={focused ? 'house.fill' : 'house'} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="stove"
+        options={{
+          title: 'Stove',
+          tabBarActiveTintColor: colors.ember,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon fallback={<Flame color={focused ? colors.ember : colors.slate} size={21} />} focused={focused} name={focused ? 'flame.fill' : 'flame'} tone="stove" />
           ),
         }}
       />

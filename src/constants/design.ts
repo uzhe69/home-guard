@@ -10,6 +10,11 @@ export const colors = {
   mintSoft: '#EEF9F3',
   line: '#E5EBE7',
   warning: '#F8CD62',
+  ember: '#A94F18',
+  flame: '#D97722',
+  warmth: '#F7E3CD',
+  warmthSoft: '#FCF4EA',
+  warmLine: '#EED8C1',
 } as const;
 
 export const radii = {
