@@ -59,6 +59,7 @@ export async function processDeparture(
   const activeSettings = await updateSettings({ phoneDepartedAt: previousSettings.phoneDepartedAt ?? Date.now() });
   presenceListeners.forEach((listener) => listener(activeSettings.phoneDepartedAt));
   await beginAcDeparture(activeSettings);
+  if ((await loadSettings()).phoneDepartedAt !== activeSettings.phoneDepartedAt) return [];
   if (activeSettings.notificationsEnabled) await startAcBackgroundMonitoring().catch(() => undefined);
   if (!activeSettings.notificationsEnabled) {
     return [];

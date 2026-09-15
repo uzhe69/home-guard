@@ -19,7 +19,7 @@ import {
   subscribeToDevice,
   subscribeToStoveDevice,
 } from '@/services/firebase';
-import { processReturnHome, reconcileStoveDeparture, simulateLeavingHome, startAcBackgroundMonitoring, startHomeGeofence, stopHomeGeofence, subscribeToHomePresence } from '@/services/geofencing';
+import { processReturnHome, reconcileStoveDeparture, simulateLeavingHome, startAcBackgroundMonitoring, startHomeGeofence, stopAcBackgroundMonitoring, stopHomeGeofence, subscribeToHomePresence } from '@/services/geofencing';
 import { emptyAcMonitoringState, evaluateAcMonitoring, loadAcMonitoringState, recordAcReading, resetAcMonitoring, startAcCalibration, stopAcCalibration, subscribeToAcMonitoring } from '@/services/ac-monitoring';
 import {
   addNotificationActionListener,
@@ -286,7 +286,10 @@ export function AppProvider({ children }: React.PropsWithChildren) {
     await startAcCalibration();
     await startAcBackgroundMonitoring().catch(() => undefined);
   }, []);
-  const cancelCalibration = useCallback(async () => { await stopAcCalibration(); }, []);
+  const cancelCalibration = useCallback(async () => {
+    const state = await stopAcCalibration();
+    if (!state.departure) await stopAcBackgroundMonitoring();
+  }, []);
 
   const stoveInactiveMinutes = getKitchenInactivityMinutes(stove, now);
   const value = useMemo<AppContextValue>(

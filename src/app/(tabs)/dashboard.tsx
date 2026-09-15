@@ -36,6 +36,7 @@ export default function DashboardScreen() {
     lastCommandLabel,
     lastUpdatedLabel,
     isAway,
+    acMonitoring,
     refreshDevice,
     turnOff,
   } = useApp();
@@ -74,8 +75,8 @@ export default function DashboardScreen() {
               <Sparkles color={colors.primary} size={21} />
             </View>
             <View className="ml-3 flex-1">
-              <Text className="text-[14px] font-semibold text-ink">Monitoring your room</Text>
-              <Text className="mt-0.5 text-[12px] text-slate">Your delayed temperature check is armed.</Text>
+              <Text className="text-[14px] font-semibold text-ink">{acMonitoring.status === 'unable-to-verify' ? 'Unable to verify AC status' : 'Monitoring your room'}</Text>
+              <Text className="mt-0.5 text-[12px] leading-5 text-slate">{acMonitoring.explanation}</Text>
             </View>
           </Animated.View>
         )}
@@ -85,7 +86,7 @@ export default function DashboardScreen() {
             <Radio color={colors.primary} size={15} />
             <Text className="text-[14px] font-semibold text-primary">Home</Text>
           </View>
-          <TemperatureGauge temperature={temperature} />
+          {Number.isFinite(temperature) ? <TemperatureGauge temperature={temperature} /> : <Text className="py-10 text-[16px] text-slate">Room temperature unavailable</Text>}
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(180).duration(650)} className="mt-5">
@@ -105,7 +106,7 @@ export default function DashboardScreen() {
               <ThermometerSnowflake color={colors.primary} size={20} />
             </View>
             <Text className="mt-3 text-[13px] text-slate">AC likelihood</Text>
-            <Text className="mt-0.5 text-[16px] font-bold text-ink">Likely on</Text>
+            <Text className="mt-0.5 text-[16px] font-bold text-ink">{acMonitoring.status === 'likely-on' ? 'Likely on' : acMonitoring.status === 'warming' ? 'Room warming' : acMonitoring.status === 'off' ? 'No alert needed' : acMonitoring.status === 'waiting' ? 'Observing' : 'Unable to verify AC status'}</Text>
           </Card>
           <Card className="flex-1 p-4">
             <View className="h-10 w-10 items-center justify-center rounded-[13px] bg-mint">

@@ -63,6 +63,7 @@ export type AcDeparture = {
   departedAt: number;
   temperatureAtDeparture: number | null;
   thresholdCelsius: number;
+  lastEvaluatedThresholdCelsius: number;
   outdoorAtDeparture: OutdoorTemperature | null;
   recentReadings: RoomTemperatureReading[];
   consecutiveOnReadings: number;

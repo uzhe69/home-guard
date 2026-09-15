@@ -8,7 +8,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
-import { SegmentedControl } from '@/components/ui/segmented-control';
+import { RadiusSettings } from '@/components/radius-settings';
 import { colors } from '@/constants/design';
 import { useApp } from '@/state/app-provider';
 
@@ -84,15 +84,7 @@ export default function LocationSetupScreen() {
 
       <View className="px-5 pb-3 pt-4">
         <Text className="mb-2 text-[14px] font-semibold text-ink">Home radius</Text>
-        <SegmentedControl
-          onChange={setRadius}
-          segments={[
-            { label: '100 m', value: 100 },
-            { label: '200 m', value: 200 },
-            { label: '300 m', value: 300 },
-          ]}
-          value={radius}
-        />
+        <RadiusSettings value={radius} onChange={async (meters) => setRadius(meters)} />
         <Text className="mt-3 text-center text-[12px] text-slate">Long-press the map to move your home pin.</Text>
         <View className="mt-4">
           <Button

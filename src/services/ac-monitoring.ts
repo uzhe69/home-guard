@@ -59,7 +59,9 @@ export function estimateThresholdCrossingMinutes(tau: number | null, outdoor: nu
 function mergeReadings(readings: RoomTemperatureReading[], incoming: RoomTemperatureReading[], now: number) {
   const merged = new Map<number, RoomTemperatureReading>();
   for (const reading of [...readings, ...incoming]) {
-    if (Number.isFinite(reading.temperatureCelsius) && Number.isFinite(reading.timestamp) && reading.timestamp <= now && reading.timestamp >= now - 180 * MINUTE) merged.set(reading.timestamp, reading);
+    if (!Number.isFinite(reading.temperatureCelsius) || !Number.isFinite(reading.timestamp) || reading.timestamp > now || reading.timestamp < now - 180 * MINUTE) continue;
+    const minute = Math.floor(reading.timestamp / MINUTE);
+    if (!merged.has(minute) || reading.timestamp > merged.get(minute)!.timestamp) merged.set(minute, reading);
   }
   return [...merged.values()].sort((a, b) => a.timestamp - b.timestamp).slice(-180);
 }
@@ -120,6 +122,7 @@ export function beginAcDeparture(settings: HomeSettings) {
       deviceId: settings.acDeviceId, departedAt,
       temperatureAtDeparture: snapshot && freshTemperature(snapshot, Date.now()) ? snapshot.roomTemperatureCelsius : null,
       thresholdCelsius: settings.temperatureThresholdCelsius, outdoorAtDeparture: outdoor,
+      lastEvaluatedThresholdCelsius: settings.temperatureThresholdCelsius,
       recentReadings: state.readings.filter((reading) => reading.timestamp <= departedAt),
       consecutiveOnReadings: 0, lastEvaluatedReadingAt: null, alertSent: false,
     };
@@ -178,6 +181,7 @@ export function startAcCalibration() {
     const settings = await loadSettings();
     if (settings.phoneDepartedAt !== null) throw new Error('Return home before calibrating.');
     const [snapshot, outdoor] = await Promise.all([getDeviceSnapshot(settings.acDeviceId), getNearbyOutdoorTemperature(settings.homeLocation)]);
+    if ((await loadSettings()).phoneDepartedAt !== null) throw new Error('Return home before calibrating.');
     if (!freshTemperature(snapshot, Date.now()) || !outdoor || outdoor.temperatureCelsius - snapshot.roomTemperatureCelsius < 1) throw new Error('Calibration needs a fresh room reading and outdoor air at least 1°C warmer than the room.');
     if (freshPowerState(snapshot, Date.now()) === 'ON') throw new Error('Switch off the AC before starting calibration.');
     const state = await loadAcMonitoringState();
@@ -185,7 +189,7 @@ export function startAcCalibration() {
     state.thermalDeviceId = settings.acDeviceId;
     state.readings = [{ timestamp: snapshot.lastSeenAt, temperatureCelsius: snapshot.roomTemperatureCelsius }];
     state.outdoor = outdoor;
-    state.calibration = { deviceId: settings.acDeviceId, startedAt: snapshot.lastSeenAt, temperatureAtStart: snapshot.roomTemperatureCelsius, outdoorAtStart: outdoor };
+    state.calibration = { deviceId: settings.acDeviceId, startedAt: Date.now(), temperatureAtStart: snapshot.roomTemperatureCelsius, outdoorAtStart: outdoor };
     state.calibrationMessage = 'Observing natural warming for at least 20 minutes. Keep the AC off and ventilation unchanged.';
     return saveState(state);
   });
@@ -226,8 +230,8 @@ export function evaluateAcMonitoring() {
     const delay = settings.acDelayMode === 'smart' ? 20 : settings.reminderDelayMinutes;
     const elapsed = (now - departure.departedAt) / MINUTE;
     const threshold = settings.temperatureThresholdCelsius;
-    if (departure.thresholdCelsius !== threshold) {
-      departure.thresholdCelsius = threshold;
+    if (departure.lastEvaluatedThresholdCelsius !== threshold) {
+      departure.lastEvaluatedThresholdCelsius = threshold;
       departure.consecutiveOnReadings = 0;
       departure.lastEvaluatedReadingAt = null;
     }
@@ -282,10 +286,11 @@ export function evaluateAcMonitoring() {
     }
     if (state.status === 'likely-on' && settings.notificationsEnabled && !departure.alertSent && snapshot) {
       const current = await loadSettings();
-      if (current.phoneDepartedAt === departure.departedAt && current.notificationsEnabled && current.acDeviceId === departure.deviceId && current.temperatureThresholdCelsius === threshold) {
+      if (current.phoneDepartedAt === departure.departedAt && current.notificationsEnabled && current.acDeviceId === departure.deviceId && current.temperatureThresholdCelsius === threshold && current.acDelayMode === settings.acDelayMode && current.reminderDelayMinutes === settings.reminderDelayMinutes) {
         await sendAcReminderNow({ deviceId: departure.deviceId, temperatureCelsius: snapshot.roomTemperatureCelsius, powerConfirmed: power === 'ON' });
         departure.alertSent = true;
-        if ((await loadSettings()).phoneDepartedAt !== departure.departedAt) await cancelAcReminders();
+        const afterAlert = await loadSettings();
+        if (afterAlert.phoneDepartedAt !== departure.departedAt || !afterAlert.notificationsEnabled) await cancelAcReminders();
       }
     }
     return saveState(state);

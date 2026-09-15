@@ -5,6 +5,8 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
+import { AcSettings } from '@/components/ac-settings';
+import { RadiusSettings } from '@/components/radius-settings';
 import { DurationInput } from '@/components/duration-input';
 import { AppHeader } from '@/components/app-header';
 import { Button } from '@/components/ui/button';
@@ -66,28 +68,11 @@ export default function SettingsScreen() {
 
         <Animated.View entering={FadeInDown.delay(140).duration(600)} className="mt-5">
           <Label>Geofence radius</Label>
-          <SegmentedControl
-            onChange={(radiusMeters) => void patchSettings({ radiusMeters })}
-            segments={[
-              { label: '100 m', value: 100 },
-              { label: '200 m', value: 200 },
-              { label: '300 m', value: 300 },
-            ]}
-            value={settings.radiusMeters}
-          />
+          <RadiusSettings value={settings.radiusMeters} onChange={(radiusMeters) => patchSettings({ radiusMeters })} />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(200).duration(600)} className="mt-5">
-          <Label>AC reminder delay</Label>
-          <SegmentedControl
-            onChange={(reminderDelayMinutes) => void patchSettings({ reminderDelayMinutes })}
-            segments={[
-              { label: '5 min', value: 5 },
-              { label: '10 min', value: 10 },
-              { label: '15 min', value: 15 },
-            ]}
-            value={settings.reminderDelayMinutes}
-          />
+          <AcSettings />
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(230).duration(600)} className="mt-5">
