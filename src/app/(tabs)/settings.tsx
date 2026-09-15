@@ -5,6 +5,7 @@ import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
+import { DurationInput } from '@/components/duration-input';
 import { AppHeader } from '@/components/app-header';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -28,6 +29,8 @@ export default function SettingsScreen() {
     sendTestReminder,
     resetDemo,
   } = useApp();
+  const [customInactivity, setCustomInactivity] = useState(false);
+  const showCustomInactivity = customInactivity || ![30, 60, 90].includes(settings.kitchenInactivityMinutes);
   const [working, setWorking] = useState<string | null>(null);
 
   async function run(label: string, action: () => Promise<void>) {
@@ -75,7 +78,7 @@ export default function SettingsScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(200).duration(600)} className="mt-5">
-          <Label>Reminder delay</Label>
+          <Label>AC reminder delay</Label>
           <SegmentedControl
             onChange={(reminderDelayMinutes) => void patchSettings({ reminderDelayMinutes })}
             segments={[
@@ -87,6 +90,43 @@ export default function SettingsScreen() {
           />
         </Animated.View>
 
+        <Animated.View entering={FadeInDown.delay(230).duration(600)} className="mt-5">
+          <Label>Stove motion inactivity</Label>
+          <SegmentedControl<number | string>
+            onChange={(duration) => {
+              setCustomInactivity(duration === 'custom');
+              if (typeof duration === 'number') void patchSettings({ kitchenInactivityMinutes: duration });
+            }}
+            segments={[
+              { label: '30 min', value: 30 },
+              { label: '60 min', value: 60 },
+              { label: '90 min', value: 90 },
+              { label: 'Custom', value: 'custom' },
+            ]}
+            value={showCustomInactivity ? 'custom' : settings.kitchenInactivityMinutes}
+          />
+          <Text className="mt-2 text-[12px] leading-5 text-slate">Alert only while the infrared sensor detects heat and no motion is detected for {settings.kitchenInactivityMinutes} minutes.</Text>
+          {showCustomInactivity && (
+            <View className="mt-3">
+              <DurationInput label="Custom inactivity duration in minutes" value={settings.kitchenInactivityMinutes} submitLabel="Save duration" onSave={(kitchenInactivityMinutes) => patchSettings({ kitchenInactivityMinutes })} />
+            </View>
+          )}
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.delay(250).duration(600)} className="mt-5">
+          <Label>Stove departure alert delay</Label>
+          <SegmentedControl<2 | 3 | 5>
+            onChange={(stoveDepartureDelayMinutes) => void patchSettings({ stoveDepartureDelayMinutes })}
+            segments={[
+              { label: '2 min', value: 2 },
+              { label: '3 min', value: 3 },
+              { label: '5 min', value: 5 },
+            ]}
+            value={settings.stoveDepartureDelayMinutes}
+          />
+          <Text className="mt-2 text-[12px] leading-5 text-slate">High-priority warning when your phone leaves the home radius while the stove is hot. Cooking timers do not delay this warning.</Text>
+        </Animated.View>
+
         <Animated.View entering={FadeInDown.delay(260).duration(600)} className="mt-5">
           <Label>Guard behavior</Label>
           <Card className="gap-3 p-3">
@@ -95,8 +135,8 @@ export default function SettingsScreen() {
                 <Bell color={colors.primary} size={21} />
               </View>
               <View className="ml-3 flex-1">
-                <Text className="text-[15px] font-semibold text-ink">Departure reminders</Text>
-                <Text className="mt-0.5 text-[12px] text-slate">One useful nudge per trip</Text>
+                <Text className="text-[15px] font-semibold text-ink">Appliance alerts</Text>
+                <Text className="mt-0.5 text-[12px] text-slate">Stove safety and AC reminders</Text>
               </View>
               <Switch
                 onValueChange={(notificationsEnabled) => void patchSettings({ notificationsEnabled })}
