@@ -160,6 +160,19 @@ export function AppProvider({ children }: React.PropsWithChildren) {
     [],
   );
 
+  useEffect(() => {
+    if (!ready) return;
+    void loadSettings().then((current) => {
+      if (current.setupComplete && current.homeLocation) void startHomeGeofence(current).catch(() => undefined);
+    });
+  }, [ready]);
+
+  useEffect(() => {
+    if (ready && !stove.isHot && settings.cookingTimerEndsAt !== null) {
+      void patchSettings({ cookingTimerEndsAt: null });
+    }
+  }, [ready, stove.isHot, settings.cookingTimerEndsAt, patchSettings]);
+
   const finishSetup = useCallback(
     async (patch: Partial<HomeSettings>) => {
       const next = await saveSettings({ ...settings, ...patch, setupComplete: true });

@@ -3,8 +3,7 @@ import { cancelStoveReminders, scheduleStoveReminder } from '@/services/notifica
 import { loadSettings } from '@/services/settings';
 import type { HomeSettings, StoveDeviceSnapshot } from '@/types/home-guard';
 
-const alertedInactivityByDevice = new Map<string, number>();
-const pendingInactivityByDevice = new Map<string, number>();
+const scheduledInactivityByDevice = new Map<string, number>();
 
 export type StoveRisk = 'none' | 'away' | 'inactivity';
 
@@ -44,12 +43,11 @@ export async function processKitchenInactivity(
 
   if (!activeSettings.notificationsEnabled || alertAt === null) {
     await cancelStoveReminders(deviceId, 'inactivity');
-    pendingInactivityByDevice.delete(deviceId);
-    alertedInactivityByDevice.delete(deviceId);
+    scheduledInactivityByDevice.delete(deviceId);
     return null;
   }
 
-  if (pendingInactivityByDevice.get(deviceId) === alertAt || alertedInactivityByDevice.get(deviceId) === alertAt) return null;
+  if (scheduledInactivityByDevice.get(deviceId) === alertAt) return null;
 
   await cancelStoveReminders(deviceId, 'inactivity');
   const delayMinutes = Math.max(0, (alertAt - Date.now()) / 60_000);
@@ -59,7 +57,6 @@ export async function processKitchenInactivity(
     inactiveMinutes: Math.max(activeSettings.kitchenInactivityMinutes, Math.floor((alertAt - activeStove.lastMotionAt) / 60_000)),
     delayMinutes,
   });
-  if (delayMinutes > 0) pendingInactivityByDevice.set(deviceId, alertAt);
-  else alertedInactivityByDevice.set(deviceId, alertAt);
+  scheduledInactivityByDevice.set(deviceId, alertAt);
   return notificationId;
 }

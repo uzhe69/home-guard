@@ -152,6 +152,8 @@ export default function StoveScreen() {
                 <Text className="text-[12px] leading-5 text-slate">Normal inactivity checks resume when this timer ends.</Text>
                 <Button label="Cancel cooking timer" onPress={() => void patchSettings({ cookingTimerEndsAt: null })} variant="stoveSecondary" />
               </View>
+            ) : !stove.isHot ? (
+              <Text className="text-[13px] text-slate">Start a timer once the stove is hot.</Text>
             ) : (
               <DurationInput label="Cooking duration in minutes" value={120} submitLabel="Start cooking timer" onSave={(minutes) => patchSettings({ cookingTimerEndsAt: Date.now() + minutes * 60_000 })} />
             )}
