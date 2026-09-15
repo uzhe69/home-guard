@@ -1,6 +1,6 @@
 # Home Guard
 
-Home Guard is an iOS-first Expo app that watches a home geofence, checks connected appliance sensors, and lets the user act on alerts from anywhere. It includes a complete mock mode, so the onboarding, dashboards, charts, commands, and notification flow can be demonstrated without hardware or a Firebase project.
+Home Guard is an iOS-first Expo app that watches a home geofence, checks connected appliance sensors, and supports remote AC control and warning-only stove alerts. It includes a complete mock mode, so the onboarding, dashboards, charts, commands, and notification flow can be demonstrated without hardware or a Firebase project.
 
 ## Stack
 
@@ -86,6 +86,32 @@ For a prototype database, authenticated users can be scoped to the device tree:
 
 Use device ownership claims and narrower telemetry/command rules before production.
 
+## Stove detection
+
+The stove attachment reports infrared temperature and motion. It cannot switch the stove off remotely; stove notifications and the stove screen offer only **Acknowledge** and **Dismiss** actions. AC remote control remains available.
+
+In **Settings**, choose a motion-inactivity threshold of **30, 60, or 90 minutes**, or save a custom positive whole number of minutes. An inactivity alert requires infrared heat throughout the selected duration and no motion during that duration. The interval starts at the later of `hotSince` and `lastMotionAt`; `stoveActive` alone never triggers an alert.
+
+In **Kitchen watch**, start an optional one-time cooking timer for longer unattended cooking. It suppresses inactivity alerts until its deadline, then normal checks resume. New motion still resets the normal interval. Canceling the timer restores normal checks immediately, and cooling clears the timer.
+
+Stove departure alerts use a separate **2, 3, or 5 minute** delay after the user's phone exits the configured geofence, independent of motion and cooking timers. They use iOS time-sensitive delivery and Android high priority. Returning inside the geofence or observing cooling cancels a pending departure alert.
+
+The stove must publish these fields under `devices/kitchen-stove/telemetry` (top-level fields are also accepted):
+
+```json
+{
+  "isHot": true,
+  "temperatureCelsius": 180,
+  "hotSince": 1789261200000,
+  "lastMotionAt": 1789262400000,
+  "lastSeenAt": 1789262500000
+}
+```
+
+`isHot` is the attachment's calibrated infrared heat classification, not a burner command or gas-flow reading. `hotSince` is the start of the current continuous hot interval, and resets after cooling; timestamps use epoch milliseconds. Missing heat classification does not fall back to a demo hot reading.
+
+The app schedules native one-shot alerts from the latest telemetry and reschedules or cancels them when it receives motion, cooling, timer, or preference changes. Native scheduling can deliver while JavaScript is suspended, but Firebase subscriptions cannot keep processing sensor updates while the app is suspended or terminated. Guaranteed continuous background evaluation and cancellation on new sensor data require device-side or trusted backend monitoring with push delivery. Physical-device location and notification behavior still need on-device verification.
+
 ## Background flow
 
 1. The home settings are saved in iOS Keychain-backed SecureStore.
@@ -101,6 +127,7 @@ iOS does not guarantee that JavaScript can wake at an exact arbitrary time after
 ```bash
 npm run lint
 npm run typecheck
+node --test tests/stove-detection.test.cjs
 npm run doctor
 npx expo export --platform ios
 ```
