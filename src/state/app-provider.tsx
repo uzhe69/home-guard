@@ -238,7 +238,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
     setStove(DEMO_STOVE_SNAPSHOT);
     setTemperatureHistory([...DEMO_TEMPERATURE_HISTORY]);
     setStoveGasHistory([...DEMO_GAS_FLOW_HISTORY]);
-  }, [settings]);
+  }, [settings, stove]);
 
   const stoveInactiveMinutes = getKitchenInactivityMinutes(stove, now);
   const value = useMemo<AppContextValue>(

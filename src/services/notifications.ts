@@ -151,6 +151,13 @@ export async function cancelStoveReminders(deviceId: string, reason?: 'away' | '
     .map(({ identifier }) => Notifications.cancelScheduledNotificationAsync(identifier)));
 }
 
+export async function dismissStoveAlerts(deviceId: string) {
+  const presented = await Notifications.getPresentedNotificationsAsync();
+  await Promise.all(presented
+    .filter(({ request }) => request.content.data?.deviceType === 'stove' && request.content.data.deviceId === deviceId)
+    .map(({ request }) => Notifications.dismissNotificationAsync(request.identifier)));
+}
+
 export function sendAcReminderNow(
   options: Omit<ScheduleAcReminderOptions, 'delayMinutes'>,
 ) {
