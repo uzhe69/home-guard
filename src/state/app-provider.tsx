@@ -19,23 +19,25 @@ import {
   subscribeToDevice,
   subscribeToStoveDevice,
 } from '@/services/firebase';
-import { processReturnHome, reconcileStoveDeparture, simulateLeavingHome, startHomeGeofence, stopHomeGeofence, subscribeToHomePresence } from '@/services/geofencing';
+import { processReturnHome, reconcileStoveDeparture, simulateLeavingHome, startAcBackgroundMonitoring, startHomeGeofence, stopHomeGeofence, subscribeToHomePresence } from '@/services/geofencing';
+import { emptyAcMonitoringState, evaluateAcMonitoring, loadAcMonitoringState, recordAcReading, resetAcMonitoring, startAcCalibration, stopAcCalibration, subscribeToAcMonitoring } from '@/services/ac-monitoring';
 import {
   addNotificationActionListener,
   configureNotifications,
   processLastNotificationResponse,
   sendAcReminderNow,
   cancelStoveReminders,
+  cancelAcReminders,
   scheduleStoveReminder,
 } from '@/services/notifications';
-import { loadSettings, resetSettings, saveSettings } from '@/services/settings';
+import { loadSettings, resetSettings, updateSettings } from '@/services/settings';
 import {
   getKitchenInactivityMinutes,
   getStoveRisk,
   processKitchenInactivity,
   type StoveRisk,
 } from '@/services/stove-monitoring';
-import type { AcDeviceSnapshot, HomeSettings, StoveDeviceSnapshot } from '@/types/home-guard';
+import type { AcDeviceSnapshot, AcMonitoringState, HomeSettings, StoveDeviceSnapshot } from '@/types/home-guard';
 
 type AppContextValue = {
   ready: boolean;
@@ -53,6 +55,9 @@ type AppContextValue = {
   stoveRisk: StoveRisk;
   firebaseMode: 'live' | 'mock';
   isAway: boolean;
+  acMonitoring: AcMonitoringState;
+  beginCalibration: () => Promise<void>;
+  cancelCalibration: () => Promise<void>;
   patchSettings: (patch: Partial<HomeSettings>) => Promise<void>;
   finishSetup: (patch: Partial<HomeSettings>) => Promise<void>;
   refreshDevice: () => Promise<void>;
@@ -84,7 +89,14 @@ export function AppProvider({ children }: React.PropsWithChildren) {
   const [temperatureHistory, setTemperatureHistory] = useState<number[]>([...DEMO_TEMPERATURE_HISTORY]);
   const [stoveGasHistory, setStoveGasHistory] = useState<number[]>([...DEMO_GAS_FLOW_HISTORY]);
   const [now, setNow] = useState(Date.now());
+  const [acMonitoring, setAcMonitoring] = useState<AcMonitoringState>(emptyAcMonitoringState);
   const isAway = settings.phoneDepartedAt !== null;
+
+  useEffect(() => {
+    const unsubscribe = subscribeToAcMonitoring(setAcMonitoring);
+    void loadAcMonitoringState().then(setAcMonitoring);
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeToHomePresence((phoneDepartedAt) => setSettings((current) => ({ ...current, phoneDepartedAt })));
@@ -107,13 +119,14 @@ export function AppProvider({ children }: React.PropsWithChildren) {
   useEffect(() => {
     const unsubscribe = subscribeToDevice(settings.acDeviceId, (snapshot) => {
       setDevice(snapshot);
+      if (ready) void recordAcReading(snapshot);
       setTemperatureHistory((history) => {
-        if (history.at(-1) === snapshot.roomTemperatureCelsius) return history;
+        if (!Number.isFinite(snapshot.roomTemperatureCelsius) || history.at(-1) === snapshot.roomTemperatureCelsius) return history;
         return [...history.slice(-11), snapshot.roomTemperatureCelsius];
       });
     });
     return unsubscribe;
-  }, [settings.acDeviceId]);
+  }, [ready, settings.acDeviceId]);
 
   useEffect(() => {
     const unsubscribe = subscribeToStoveDevice(settings.stoveDeviceId, (snapshot) => {
@@ -151,13 +164,16 @@ export function AppProvider({ children }: React.PropsWithChildren) {
 
   const patchSettings = useCallback(
     async (patch: Partial<HomeSettings>) => {
-      const next = await saveSettings({ ...(await loadSettings()), ...patch });
+      const next = await updateSettings(patch);
       setSettings(next);
+      if (patch.acDeviceId && patch.acDeviceId !== settings.acDeviceId) await resetAcMonitoring();
+      if (patch.homeLocation) await processReturnHome(next);
+      if (patch.notificationsEnabled === false) await cancelAcReminders();
       if (next.setupComplete && next.homeLocation) {
         void startHomeGeofence(next).catch(() => undefined);
       }
     },
-    [],
+    [settings.acDeviceId],
   );
 
   useEffect(() => {
@@ -175,7 +191,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
 
   const finishSetup = useCallback(
     async (patch: Partial<HomeSettings>) => {
-      const next = await saveSettings({ ...settings, ...patch, setupComplete: true });
+      const next = await updateSettings({ ...patch, setupComplete: true });
       setSettings(next);
       if (next.notificationsEnabled) await configureNotifications();
       if (next.homeLocation) await startHomeGeofence(next).catch(() => undefined);
@@ -185,6 +201,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
 
   const refreshDevice = useCallback(async () => {
     setDevice(await getDeviceSnapshot(settings.acDeviceId));
+    await evaluateAcMonitoring();
   }, [settings.acDeviceId]);
 
   const refreshStove = useCallback(async () => {
@@ -243,6 +260,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
   const resetDemo = useCallback(async () => {
     await stopHomeGeofence();
     await processReturnHome(settings);
+    await resetAcMonitoring();
     await cancelStoveReminders(settings.stoveDeviceId);
     await processKitchenInactivity(stove, { ...settings, notificationsEnabled: false });
     const defaults = await resetSettings();
@@ -253,6 +271,23 @@ export function AppProvider({ children }: React.PropsWithChildren) {
     setStoveGasHistory([...DEMO_GAS_FLOW_HISTORY]);
   }, [settings, stove]);
 
+  useEffect(() => {
+    if (!ready) return;
+    const check = () => {
+      if (AppState.currentState === 'active') void evaluateAcMonitoring().catch(() => undefined);
+    };
+    check();
+    const interval = setInterval(check, 60_000);
+    const subscription = AppState.addEventListener('change', (state) => { if (state === 'active') check(); });
+    return () => { clearInterval(interval); subscription.remove(); };
+  }, [ready]);
+
+  const beginCalibration = useCallback(async () => {
+    await startAcCalibration();
+    await startAcBackgroundMonitoring().catch(() => undefined);
+  }, []);
+  const cancelCalibration = useCallback(async () => { await stopAcCalibration(); }, []);
+
   const stoveInactiveMinutes = getKitchenInactivityMinutes(stove, now);
   const value = useMemo<AppContextValue>(
     () => ({
@@ -261,7 +296,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       temperature: device.roomTemperatureCelsius,
       temperatureHistory,
       connectionStatus: device.connectionStatus,
-      lastCommandLabel: device.lastCommand?.value === 'OFF' ? 'Turned off' : 'AC is on',
+      lastCommandLabel: device.lastCommand ? `${device.lastCommand.value} requested` : 'No command',
       lastUpdatedLabel: relativeTime(device.lastSeenAt, 'updated now'),
       stove,
       stoveGasHistory,
@@ -271,6 +306,9 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       stoveRisk: getStoveRisk(stove, settings, now),
       firebaseMode: getFirebaseMode(),
       isAway,
+      acMonitoring,
+      beginCalibration,
+      cancelCalibration,
       patchSettings,
       finishSetup,
       refreshDevice,
@@ -285,6 +323,9 @@ export function AppProvider({ children }: React.PropsWithChildren) {
     }),
     [
       device,
+      acMonitoring,
+      beginCalibration,
+      cancelCalibration,
       now,
       finishSetup,
       isAway,

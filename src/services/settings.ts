@@ -16,6 +16,19 @@ function withDefaults(value: Partial<HomeSettings> | null): HomeSettings {
   return {
     ...DEFAULT_SETTINGS,
     ...value,
+    acDelayMode: value?.acDelayMode === 'fixed' ? 'fixed' : 'smart',
+    reminderDelayMinutes:
+      Number.isSafeInteger(value?.reminderDelayMinutes) && value!.reminderDelayMinutes! >= 20 && value!.reminderDelayMinutes! <= 120
+        ? value!.reminderDelayMinutes!
+        : DEFAULT_SETTINGS.reminderDelayMinutes,
+    temperatureThresholdCelsius:
+      typeof value?.temperatureThresholdCelsius === 'number' && Number.isFinite(value.temperatureThresholdCelsius) && value.temperatureThresholdCelsius >= 18 && value.temperatureThresholdCelsius <= 28 && Number.isInteger(value.temperatureThresholdCelsius * 2)
+        ? value.temperatureThresholdCelsius
+        : DEFAULT_SETTINGS.temperatureThresholdCelsius,
+    radiusMeters:
+      typeof value?.radiusMeters === 'number' && Number.isFinite(value.radiusMeters) && value.radiusMeters > 0
+        ? value.radiusMeters
+        : DEFAULT_SETTINGS.radiusMeters,
     kitchenInactivityMinutes:
       Number.isSafeInteger(value?.kitchenInactivityMinutes) && value!.kitchenInactivityMinutes! > 0
         ? value!.kitchenInactivityMinutes!
@@ -87,11 +100,17 @@ export async function saveSettings(settings: HomeSettings): Promise<HomeSettings
   return nextSettings;
 }
 
-export async function updateSettings(
+let settingsUpdateQueue: Promise<unknown> = Promise.resolve();
+
+export function updateSettings(
   patch: Partial<HomeSettings>,
 ): Promise<HomeSettings> {
-  const currentSettings = await loadSettings();
-  return saveSettings({ ...currentSettings, ...patch });
+  const update = settingsUpdateQueue.then(async () => {
+    const currentSettings = await loadSettings();
+    return saveSettings({ ...currentSettings, ...patch });
+  });
+  settingsUpdateQueue = update.catch(() => undefined);
+  return update;
 }
 
 export async function resetSettings(): Promise<HomeSettings> {

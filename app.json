@@ -51,7 +51,9 @@
           "locationWhenInUsePermission": "Home Guard uses your location to set your home radius.",
           "locationAlwaysPermission": "Home Guard monitors when you leave so it can check active appliances.",
           "locationAlwaysAndWhenInUsePermission": "Home Guard monitors when you leave so it can check active appliances.",
-          "isIosBackgroundLocationEnabled": true
+          "isIosBackgroundLocationEnabled": true,
+          "isAndroidBackgroundLocationEnabled": true,
+          "isAndroidForegroundServiceEnabled": true
         }
       ],
       "expo-notifications",

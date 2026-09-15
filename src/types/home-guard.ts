@@ -8,6 +8,7 @@ export type HomeSettings = {
   homeAddress: string;
   radiusMeters: number;
   reminderDelayMinutes: number;
+  acDelayMode: 'smart' | 'fixed';
   temperatureThresholdCelsius: number;
   notificationsEnabled: boolean;
   acDeviceId: string;
@@ -40,6 +41,53 @@ export type BaseDeviceSnapshot = {
 export type AcDeviceSnapshot = BaseDeviceSnapshot & {
   deviceType: 'ac';
   roomTemperatureCelsius: number;
+  powerState: 'ON' | 'OFF' | null;
+  powerStateUpdatedAt: number | null;
+};
+
+export type RoomTemperatureReading = {
+  timestamp: number;
+  temperatureCelsius: number;
+};
+
+export type OutdoorTemperature = {
+  temperatureCelsius: number;
+  timestamp: number;
+  stationName: string;
+};
+
+export type AcStatus = 'home' | 'waiting' | 'warming' | 'likely-on' | 'off' | 'unable-to-verify';
+
+export type AcDeparture = {
+  deviceId: string;
+  departedAt: number;
+  temperatureAtDeparture: number | null;
+  thresholdCelsius: number;
+  outdoorAtDeparture: OutdoorTemperature | null;
+  recentReadings: RoomTemperatureReading[];
+  consecutiveOnReadings: number;
+  lastEvaluatedReadingAt: number | null;
+  alertSent: boolean;
+};
+
+export type AcCalibration = {
+  deviceId: string;
+  startedAt: number;
+  temperatureAtStart: number;
+  outdoorAtStart: OutdoorTemperature;
+};
+
+export type AcMonitoringState = {
+  departure: AcDeparture | null;
+  readings: RoomTemperatureReading[];
+  outdoor: OutdoorTemperature | null;
+  status: AcStatus;
+  explanation: string;
+  estimatedCrossingMinutes: number | null;
+  thermalDeviceId: string | null;
+  thermalTimeConstantsMinutes: number[];
+  calibration: AcCalibration | null;
+  calibrationMessage: string;
 };
 
 export type StoveDeviceSnapshot = BaseDeviceSnapshot & {

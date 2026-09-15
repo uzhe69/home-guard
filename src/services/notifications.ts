@@ -16,6 +16,7 @@ type ScheduleAcReminderOptions = {
   temperatureCelsius: number;
   deviceId: string;
   delayMinutes?: number;
+  powerConfirmed?: boolean;
 };
 
 type ScheduleStoveReminderOptions = {
@@ -91,13 +92,14 @@ export async function scheduleAcReminder({
   temperatureCelsius,
   deviceId,
   delayMinutes = 0,
+  powerConfirmed = false,
 }: ScheduleAcReminderOptions): Promise<string> {
   const delaySeconds = Math.max(0, Math.round(delayMinutes * 60));
 
   return Notifications.scheduleNotificationAsync({
     content: {
-      title: 'Your AC may still be on',
-      body: `Your room is ${temperatureCelsius.toFixed(1)}°C and no one is home.`,
+      title: powerConfirmed ? 'Your AC is still on' : 'Your AC may still be on',
+      body: powerConfirmed ? 'Your AC reports that its power is on while you’re away.' : `Your room remains ${temperatureCelsius.toFixed(1)}°C and is stable or cooling while you’re away.`,
       sound: 'default',
       categoryIdentifier: AC_REMINDER_CATEGORY,
       data: { deviceId, deviceType: 'ac', temperatureCelsius },
@@ -110,6 +112,15 @@ export async function scheduleAcReminder({
           }
         : null,
   });
+}
+
+export async function cancelAcReminders() {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const presented = await Notifications.getPresentedNotificationsAsync();
+  await Promise.all([
+    ...scheduled.filter(({ content }) => content.data?.deviceType === 'ac').map(({ identifier }) => Notifications.cancelScheduledNotificationAsync(identifier)),
+    ...presented.filter(({ request }) => request.content.data?.deviceType === 'ac').map(({ request }) => Notifications.dismissNotificationAsync(request.identifier)),
+  ]);
 }
 
 export function scheduleStoveReminder({

@@ -4,6 +4,10 @@ import {
   get,
   getDatabase,
   onValue,
+  query,
+  orderByChild,
+  startAt,
+  limitToLast,
   ref,
   serverTimestamp,
   set,
@@ -17,6 +21,7 @@ import type {
   DeviceCommandSource,
   DeviceCommandValue,
   StoveDeviceSnapshot,
+  RoomTemperatureReading,
 } from '@/types/home-guard';
 
 type FirebaseSession = {
@@ -31,6 +36,8 @@ type FirebaseDeviceValue = {
   lastSeenAt?: number;
   temperature?: number;
   temperatureCelsius?: number;
+  powerState?: 'ON' | 'OFF';
+  powerStateUpdatedAt?: number;
   stoveActive?: boolean;
   isHot?: boolean;
   hotSince?: number;
@@ -39,6 +46,8 @@ type FirebaseDeviceValue = {
   activeSince?: number;
   lastMotionAt?: number;
   telemetry?: {
+    powerState?: 'ON' | 'OFF';
+    powerStateUpdatedAt?: number;
     temperatureCelsius?: number;
     lastSeenAt?: number;
     stoveActive?: boolean;
@@ -151,6 +160,7 @@ function parseAcSnapshot(
     value?.temperatureCelsius ??
     value?.temperature;
   const lastSeenAt = value?.telemetry?.lastSeenAt ?? value?.lastSeenAt;
+  const powerState = value?.telemetry?.powerState ?? value?.powerState;
 
   return {
     deviceId,
@@ -158,12 +168,14 @@ function parseAcSnapshot(
     roomTemperatureCelsius:
       typeof temperature === 'number' && Number.isFinite(temperature)
         ? temperature
-        : DEMO_AC_SNAPSHOT.roomTemperatureCelsius,
+        : NaN,
+    powerState: powerState === 'ON' || powerState === 'OFF' ? powerState : null,
+    powerStateUpdatedAt: parseTimestamp(value?.telemetry?.powerStateUpdatedAt ?? value?.powerStateUpdatedAt, 0) || null,
     connectionStatus:
-      value?.connectionStatus === 'offline' || value?.connected === false
+      !value || value?.connectionStatus === 'offline' || value?.connected === false
         ? 'offline'
         : 'online',
-    lastSeenAt: parseTimestamp(lastSeenAt, Date.now()),
+    lastSeenAt: parseTimestamp(lastSeenAt, 0),
     lastCommand: parseCommand(
       value?.commands?.latest ?? value?.lastCommand ?? null,
     ),
@@ -239,6 +251,25 @@ export async function getStoveSnapshot(deviceId: string): Promise<StoveDeviceSna
 export async function getRoomTemperature(deviceId: string): Promise<number> {
   const snapshot = await getDeviceSnapshot(deviceId);
   return snapshot.roomTemperatureCelsius;
+}
+
+export async function getRoomTemperatureReadings(deviceId: string, since: number): Promise<RoomTemperatureReading[]> {
+  const session = await getFirebaseSession();
+  if (!session) return [];
+  const snapshot = await get(query(
+    ref(session.database, `devices/${deviceId}/temperatureReadings`),
+    orderByChild('timestamp'),
+    startAt(since),
+    limitToLast(180),
+  ));
+  const readings: RoomTemperatureReading[] = [];
+  snapshot.forEach((child) => {
+    const reading = child.val() as Partial<RoomTemperatureReading> | null;
+    if (reading && typeof reading.timestamp === 'number' && Number.isFinite(reading.timestamp) && typeof reading.temperatureCelsius === 'number' && Number.isFinite(reading.temperatureCelsius)) {
+      readings.push({ timestamp: reading.timestamp, temperatureCelsius: reading.temperatureCelsius });
+    }
+  });
+  return readings;
 }
 
 export function subscribeToDevice(
