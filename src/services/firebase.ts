@@ -32,6 +32,8 @@ type FirebaseDeviceValue = {
   temperature?: number;
   temperatureCelsius?: number;
   stoveActive?: boolean;
+  isHot?: boolean;
+  hotSince?: number;
   activeBurners?: number;
   gasFlowLitersPerMinute?: number;
   activeSince?: number;
@@ -40,6 +42,8 @@ type FirebaseDeviceValue = {
     temperatureCelsius?: number;
     lastSeenAt?: number;
     stoveActive?: boolean;
+    isHot?: boolean;
+    hotSince?: number;
     activeBurners?: number;
     gasFlowLitersPerMinute?: number;
     activeSince?: number;
@@ -176,11 +180,17 @@ function parseStoveSnapshot(
 ): StoveDeviceSnapshot {
   const telemetry = value?.telemetry;
   const stoveActive = telemetry?.stoveActive ?? value?.stoveActive;
+  const isHot = (telemetry?.isHot ?? value?.isHot) === true;
+  const temperature = telemetry?.temperatureCelsius ?? value?.temperatureCelsius;
+  const hotSince = telemetry?.hotSince ?? value?.hotSince;
   const activeSince = telemetry?.activeSince ?? value?.activeSince;
 
   return {
     deviceId,
     deviceType: 'stove',
+    isHot,
+    temperatureCelsius: typeof temperature === 'number' && Number.isFinite(temperature) ? temperature : null,
+    hotSince: isHot ? parseTimestamp(hotSince, Date.now()) : null,
     isActive: typeof stoveActive === 'boolean' ? stoveActive : DEMO_STOVE_SNAPSHOT.isActive,
     activeBurners: parseNumber(telemetry?.activeBurners ?? value?.activeBurners, 0),
     gasFlowLitersPerMinute: parseNumber(
@@ -358,6 +368,9 @@ export async function setMockStoveState(
     ...mockStoveSnapshot,
     deviceId,
     isActive,
+    isHot: isActive,
+    temperatureCelsius: isActive ? 180 : 25,
+    hotSince: isActive ? Math.min(mockStoveSnapshot.hotSince ?? Date.now(), lastMotionAt) : null,
     activeBurners: isActive ? 1 : 0,
     gasFlowLitersPerMinute: isActive ? 1.4 : 0,
     activeSince: isActive ? (mockStoveSnapshot.activeSince ?? Date.now()) : null,

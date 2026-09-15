@@ -1,10 +1,12 @@
 import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
 
 import { sendTurnOffCommand } from '@/services/firebase';
 import type { DeviceType, NotificationActionResult } from '@/types/home-guard';
 
 export const AC_REMINDER_CATEGORY = 'HOME_GUARD_AC_REMINDER';
 export const STOVE_REMINDER_CATEGORY = 'HOME_GUARD_STOVE_REMINDER';
+export const STOVE_ALERT_CHANNEL = 'stove-alerts';
 export const TURN_OFF_ACTION = 'TURN_OFF';
 export const KEEP_ON_ACTION = 'KEEP_ON';
 export const ACKNOWLEDGE_ACTION = 'ACKNOWLEDGE';
@@ -20,6 +22,7 @@ type ScheduleStoveReminderOptions = {
   deviceId: string;
   reason: 'away' | 'inactivity';
   inactiveMinutes?: number;
+  delayMinutes?: number;
 };
 
 const reminderActions: Notifications.NotificationAction[] = [
@@ -51,6 +54,15 @@ export async function configureNotifications(): Promise<boolean> {
       shouldSetBadge: false,
     }),
   });
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync(STOVE_ALERT_CHANNEL, {
+      name: 'Stove safety alerts',
+      importance: Notifications.AndroidImportance.HIGH,
+      sound: 'default',
+      vibrationPattern: [0, 250, 250, 250],
+    });
+  }
 
   await Promise.all([
     Notifications.setNotificationCategoryAsync(AC_REMINDER_CATEGORY, reminderActions),
@@ -104,22 +116,39 @@ export function scheduleStoveReminder({
   deviceId,
   reason,
   inactiveMinutes = 0,
+  delayMinutes = 0,
 }: ScheduleStoveReminderOptions): Promise<string> {
   const body =
     reason === 'away'
-      ? 'The stove is active and everyone has left the home radius.'
-      : `The stove is active, but no kitchen motion was detected for ${inactiveMinutes} minutes.`;
+      ? 'The stove was hot when your phone left the home radius. Check it in person.'
+      : `The stove remains hot with no kitchen motion for ${inactiveMinutes} minutes. Check it in person.`;
 
   return Notifications.scheduleNotificationAsync({
+    identifier: `stove:${deviceId}:${reason}`,
     content: {
-      title: reason === 'away' ? 'Your stove is still on' : 'Check your kitchen',
+      title: reason === 'away' ? 'Urgent: check your stove' : 'Check your kitchen',
       body,
       sound: 'default',
+      priority: reason === 'away' ? Notifications.AndroidNotificationPriority.HIGH : Notifications.AndroidNotificationPriority.DEFAULT,
+      interruptionLevel: reason === 'away' ? 'timeSensitive' : 'active',
       categoryIdentifier: STOVE_REMINDER_CATEGORY,
       data: { deviceId, deviceType: 'stove', reason },
     },
-    trigger: null,
+    trigger: delayMinutes > 0
+      ? {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: Math.max(1, Math.ceil(delayMinutes * 60)),
+          channelId: STOVE_ALERT_CHANNEL,
+        }
+      : Platform.OS === 'android' ? { channelId: STOVE_ALERT_CHANNEL } : null,
   });
+}
+
+export async function cancelStoveReminders(deviceId: string, reason?: 'away' | 'inactivity') {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(scheduled
+    .filter(({ content }) => content.data?.deviceType === 'stove' && content.data.deviceId === deviceId && (!reason || content.data.reason === reason))
+    .map(({ identifier }) => Notifications.cancelScheduledNotificationAsync(identifier)));
 }
 
 export function sendAcReminderNow(

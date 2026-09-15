@@ -13,6 +13,9 @@ export const DEFAULT_SETTINGS: HomeSettings = {
   acDeviceId: 'bedroom-ac',
   stoveDeviceId: 'kitchen-stove',
   kitchenInactivityMinutes: 60,
+  cookingTimerEndsAt: null,
+  stoveDepartureDelayMinutes: 3,
+  phoneDepartedAt: null,
   setupComplete: false,
 };
 
@@ -32,6 +35,9 @@ export const DEMO_AC_SNAPSHOT: AcDeviceSnapshot = {
 export const DEMO_STOVE_SNAPSHOT: StoveDeviceSnapshot = {
   deviceId: DEFAULT_SETTINGS.stoveDeviceId,
   deviceType: 'stove',
+  isHot: true,
+  temperatureCelsius: 180,
+  hotSince: Date.now() - 38 * 60_000,
   isActive: true,
   activeBurners: 1,
   gasFlowLitersPerMinute: 1.4,

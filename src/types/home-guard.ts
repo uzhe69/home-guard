@@ -13,6 +13,9 @@ export type HomeSettings = {
   acDeviceId: string;
   stoveDeviceId: string;
   kitchenInactivityMinutes: number;
+  cookingTimerEndsAt: number | null;
+  stoveDepartureDelayMinutes: 2 | 3 | 5;
+  phoneDepartedAt: number | null;
   setupComplete: boolean;
 };
 
@@ -41,6 +44,9 @@ export type AcDeviceSnapshot = BaseDeviceSnapshot & {
 
 export type StoveDeviceSnapshot = BaseDeviceSnapshot & {
   deviceType: 'stove';
+  isHot: boolean;
+  temperatureCelsius: number | null;
+  hotSince: number | null;
   isActive: boolean;
   activeBurners: number;
   gasFlowLitersPerMinute: number;

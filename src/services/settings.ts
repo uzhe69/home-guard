@@ -16,6 +16,22 @@ function withDefaults(value: Partial<HomeSettings> | null): HomeSettings {
   return {
     ...DEFAULT_SETTINGS,
     ...value,
+    kitchenInactivityMinutes:
+      Number.isSafeInteger(value?.kitchenInactivityMinutes) && value!.kitchenInactivityMinutes! > 0
+        ? value!.kitchenInactivityMinutes!
+        : DEFAULT_SETTINGS.kitchenInactivityMinutes,
+    stoveDepartureDelayMinutes:
+      value?.stoveDepartureDelayMinutes === 2 || value?.stoveDepartureDelayMinutes === 3 || value?.stoveDepartureDelayMinutes === 5
+        ? value.stoveDepartureDelayMinutes
+        : DEFAULT_SETTINGS.stoveDepartureDelayMinutes,
+    cookingTimerEndsAt:
+      typeof value?.cookingTimerEndsAt === 'number' && Number.isFinite(value.cookingTimerEndsAt)
+        ? value.cookingTimerEndsAt
+        : null,
+    phoneDepartedAt:
+      typeof value?.phoneDepartedAt === 'number' && Number.isFinite(value.phoneDepartedAt)
+        ? value.phoneDepartedAt
+        : null,
     homeLocation:
       location &&
       Number.isFinite(location.latitude) &&
