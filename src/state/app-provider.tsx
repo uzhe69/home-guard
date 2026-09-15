@@ -56,7 +56,6 @@ type AppContextValue = {
   refreshDevice: () => Promise<void>;
   refreshStove: () => Promise<void>;
   turnOff: () => Promise<void>;
-  turnOffStove: () => Promise<void>;
   simulateLeaving: () => Promise<void>;
   simulateTemperature: (temperature: number) => Promise<void>;
   simulateStove: (scenario: 'active' | 'inactive' | 'off') => Promise<void>;
@@ -168,10 +167,6 @@ export function AppProvider({ children }: React.PropsWithChildren) {
     setIsAway(false);
   }, [settings.acDeviceId]);
 
-  const turnOffStove = useCallback(async () => {
-    await sendTurnOffCommand(settings.stoveDeviceId, 'app', 'stove');
-  }, [settings.stoveDeviceId]);
-
   const simulateLeaving = useCallback(async () => {
     setIsAway(true);
     await simulateLeavingHome(settings);
@@ -251,7 +246,6 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       refreshDevice,
       refreshStove,
       turnOff,
-      turnOffStove,
       simulateLeaving,
       simulateTemperature,
       simulateStove,
@@ -279,7 +273,6 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       stoveInactiveMinutes,
       temperatureHistory,
       turnOff,
-      turnOffStove,
     ],
   );
 

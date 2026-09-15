@@ -49,7 +49,7 @@ export type StoveDeviceSnapshot = BaseDeviceSnapshot & {
 };
 
 export type NotificationActionResult = {
-  action: 'turn_off' | 'keep_on' | 'opened' | 'ignored';
+  action: 'turn_off' | 'keep_on' | 'opened' | 'ignored' | 'acknowledged' | 'dismissed';
   deviceId?: string;
   deviceType?: DeviceType;
 };

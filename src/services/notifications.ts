@@ -7,6 +7,8 @@ export const AC_REMINDER_CATEGORY = 'HOME_GUARD_AC_REMINDER';
 export const STOVE_REMINDER_CATEGORY = 'HOME_GUARD_STOVE_REMINDER';
 export const TURN_OFF_ACTION = 'TURN_OFF';
 export const KEEP_ON_ACTION = 'KEEP_ON';
+export const ACKNOWLEDGE_ACTION = 'ACKNOWLEDGE';
+export const DISMISS_ACTION = 'DISMISS';
 
 type ScheduleAcReminderOptions = {
   temperatureCelsius: number;
@@ -52,7 +54,10 @@ export async function configureNotifications(): Promise<boolean> {
 
   await Promise.all([
     Notifications.setNotificationCategoryAsync(AC_REMINDER_CATEGORY, reminderActions),
-    Notifications.setNotificationCategoryAsync(STOVE_REMINDER_CATEGORY, reminderActions),
+    Notifications.setNotificationCategoryAsync(STOVE_REMINDER_CATEGORY, [
+      { identifier: ACKNOWLEDGE_ACTION, buttonTitle: 'Acknowledge' },
+      { identifier: DISMISS_ACTION, buttonTitle: 'Dismiss' },
+    ]),
   ]);
 
   const currentPermissions = await Notifications.getPermissionsAsync();
@@ -139,7 +144,19 @@ export async function processNotificationResponse(
   const deviceId = getResponseDeviceId(response);
   const deviceType = getResponseDeviceType(response);
 
-  if (response.actionIdentifier === TURN_OFF_ACTION && deviceId) {
+  if (deviceType === 'stove' || response.notification.request.content.categoryIdentifier === STOVE_REMINDER_CATEGORY) {
+    if (response.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) {
+      return { action: 'opened', deviceId, deviceType: 'stove' };
+    }
+    await Notifications.dismissNotificationAsync(response.notification.request.identifier);
+    return {
+      action: response.actionIdentifier === ACKNOWLEDGE_ACTION ? 'acknowledged' : 'dismissed',
+      deviceId,
+      deviceType: 'stove',
+    };
+  }
+
+  if (response.actionIdentifier === TURN_OFF_ACTION && deviceId && deviceType === 'ac') {
     await sendTurnOffCommand(deviceId, 'notification', deviceType);
     return { action: 'turn_off', deviceId, deviceType };
   }

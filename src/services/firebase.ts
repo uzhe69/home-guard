@@ -16,7 +16,6 @@ import type {
   DeviceCommand,
   DeviceCommandSource,
   DeviceCommandValue,
-  DeviceType,
   StoveDeviceSnapshot,
 } from '@/types/home-guard';
 
@@ -294,8 +293,9 @@ export async function sendDeviceCommand(
   deviceId: string,
   value: DeviceCommandValue,
   source: DeviceCommandSource = 'app',
-  deviceType: DeviceType = 'ac',
+  deviceType: 'ac' = 'ac',
 ): Promise<DeviceCommand> {
+  if (deviceType !== 'ac') throw new Error('Only the AC supports remote commands.');
   const session = await getFirebaseSession();
   const command: DeviceCommand = {
     value,
@@ -304,26 +304,13 @@ export async function sendDeviceCommand(
   };
 
   if (!session) {
-    if (deviceType === 'stove') {
-      mockStoveSnapshot = {
-        ...mockStoveSnapshot,
-        isActive: value === 'ON',
-        activeBurners: value === 'ON' ? Math.max(1, mockStoveSnapshot.activeBurners) : 0,
-        gasFlowLitersPerMinute: value === 'ON' ? Math.max(1.2, mockStoveSnapshot.gasFlowLitersPerMinute) : 0,
-        activeSince: value === 'ON' ? Date.now() : null,
-        lastCommand: command,
-        lastSeenAt: Date.now(),
-      };
-      mockStoveListeners.forEach((listener) => listener({ ...mockStoveSnapshot }));
-    } else {
-      mockAcSnapshot = {
-        ...mockAcSnapshot,
-        deviceId,
-        lastCommand: command,
-        lastSeenAt: Date.now(),
-      };
-      mockAcListeners.forEach((listener) => listener({ ...mockAcSnapshot }));
-    }
+    mockAcSnapshot = {
+      ...mockAcSnapshot,
+      deviceId,
+      lastCommand: command,
+      lastSeenAt: Date.now(),
+    };
+    mockAcListeners.forEach((listener) => listener({ ...mockAcSnapshot }));
     return command;
   }
 
@@ -340,7 +327,7 @@ export async function sendDeviceCommand(
 export function sendTurnOffCommand(
   deviceId: string,
   source: DeviceCommandSource = 'app',
-  deviceType: DeviceType = 'ac',
+  deviceType: 'ac' = 'ac',
 ) {
   return sendDeviceCommand(deviceId, 'OFF', source, deviceType);
 }
