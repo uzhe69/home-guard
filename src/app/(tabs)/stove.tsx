@@ -8,7 +8,7 @@ import {
   Wifi,
 } from 'lucide-react-native';
 import React from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, Text, View } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
@@ -28,6 +28,7 @@ import { DurationInput } from '@/components/duration-input';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { colors } from '@/constants/design';
+import { useScreenEntrance } from '@/lib/motion';
 import { dismissStoveAlerts } from '@/services/notifications';
 import { useApp } from '@/state/app-provider';
 
@@ -107,6 +108,7 @@ export default function StoveScreen() {
   } = useApp();
   const [refreshing, setRefreshing] = React.useState(false);
   const [dismissedRisk, setDismissedRisk] = React.useState<string | null>(null);
+  const screenStyle = useScreenEntrance();
   const runtimeMinutes = stove.hotSince
     ? Math.max(1, Math.round((Date.now() - stove.hotSince) / 60_000))
     : 0;
@@ -116,7 +118,7 @@ export default function StoveScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
-      <ScrollView
+      <Animated.ScrollView
         contentContainerStyle={{ paddingBottom: 28, paddingHorizontal: 20 }}
         refreshControl={
           <RefreshControl
@@ -129,6 +131,7 @@ export default function StoveScreen() {
             }}
           />
         }
+        style={screenStyle}
         showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInUp.duration(500)}>
           <AppHeader />
@@ -228,7 +231,7 @@ export default function StoveScreen() {
             <Text className="ml-3 flex-1 text-[13px] leading-5 text-slate">High-priority alert {settings.stoveDepartureDelayMinutes} minutes after your phone leaves the home radius while the stove is hot.</Text>
           </View>
         </Animated.View>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }

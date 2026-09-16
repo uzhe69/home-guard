@@ -51,6 +51,8 @@ export function Button({
   disabled,
   onPressIn,
   onPressOut,
+  onHoverIn,
+  onHoverOut,
   onPress,
   ...props
 }: ButtonProps) {
@@ -63,6 +65,14 @@ export function Button({
         accessibilityRole="button"
         className={cn(buttonVariants({ variant }), disabled && 'opacity-45', className)}
         disabled={disabled || loading}
+        onHoverIn={(event) => {
+          scale.value = withSpring(1.012, { damping: 20, stiffness: 280 });
+          onHoverIn?.(event);
+        }}
+        onHoverOut={(event) => {
+          scale.value = withSpring(1, { damping: 20, stiffness: 280 });
+          onHoverOut?.(event);
+        }}
         onPress={async (event) => {
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
           onPress?.(event);

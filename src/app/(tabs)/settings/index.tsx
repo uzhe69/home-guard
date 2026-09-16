@@ -13,6 +13,7 @@ import { Alert, Pressable, Text, View } from 'react-native';
 
 import { SettingsPage } from '@/components/settings-page';
 import { Card } from '@/components/ui/card';
+import { MotionPressable } from '@/components/ui/motion-pressable';
 import { colors } from '@/constants/design';
 import { useApp } from '@/state/app-provider';
 
@@ -45,7 +46,7 @@ export default function SettingsScreen() {
           const iconColor = stove ? colors.ember : developer ? '#5564B0' : colors.primary;
           const iconBackground = stove ? 'bg-warmth' : developer ? 'bg-[#EEF1FF]' : 'bg-mint';
           return (
-            <Pressable
+            <MotionPressable
               accessibilityRole="button"
               className={`flex-row items-center rounded-[18px] p-3.5 ${index < sections.length - 1 ? 'mb-1' : ''}`}
               key={section.route}
@@ -60,7 +61,7 @@ export default function SettingsScreen() {
                 </Text>
               </View>
               <ChevronRight color={colors.slate} size={18} />
-            </Pressable>
+            </MotionPressable>
           );
         })}
       </Card>

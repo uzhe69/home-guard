@@ -1,6 +1,6 @@
 import { CalendarDays, DollarSign, Leaf, Sprout } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -10,6 +10,7 @@ import { ImpactChart } from '@/components/impact-chart';
 import { Card } from '@/components/ui/card';
 import { SegmentedControl } from '@/components/ui/segmented-control';
 import { colors } from '@/constants/design';
+import { useScreenEntrance } from '@/lib/motion';
 
 type Period = 'week' | 'month' | 'all';
 
@@ -22,10 +23,11 @@ const impact = {
 export default function ImpactScreen() {
   const [period, setPeriod] = useState<Period>('week');
   const data = impact[period];
+  const screenStyle = useScreenEntrance();
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
-      <ScrollView contentContainerStyle={{ paddingBottom: 28, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView contentContainerStyle={{ paddingBottom: 28, paddingHorizontal: 20 }} showsVerticalScrollIndicator={false} style={screenStyle}>
         <Animated.View entering={FadeInUp.duration(500)}>
           <AppHeader />
           <Text className="text-[36px] font-bold tracking-[-1.5px] text-ink">Your impact</Text>
@@ -101,7 +103,7 @@ export default function ImpactScreen() {
             A more sustainable Singapore, one home at a time.
           </Text>
         </Animated.View>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }

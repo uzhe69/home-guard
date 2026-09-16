@@ -1,6 +1,6 @@
 import { Clock3, Power, Radio, Sparkles, ThermometerSnowflake, Wifi } from 'lucide-react-native';
 import React, { useEffect } from 'react';
-import { RefreshControl, ScrollView, Text, View } from 'react-native';
+import { RefreshControl, Text, View } from 'react-native';
 import Animated, {
   FadeInDown,
   FadeInUp,
@@ -17,6 +17,7 @@ import { TemperatureGauge } from '@/components/temperature-gauge';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { colors } from '@/constants/design';
+import { useScreenEntrance } from '@/lib/motion';
 import { useApp } from '@/state/app-provider';
 
 function StatusDot() {
@@ -43,6 +44,7 @@ export default function DashboardScreen() {
   } = useApp();
   const [refreshing, setRefreshing] = React.useState(false);
   const [sending, setSending] = React.useState(false);
+  const screenStyle = useScreenEntrance();
   const acStatusLabel =
     acPowerState === 'ON'
       ? 'On'
@@ -62,7 +64,7 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
-      <ScrollView
+      <Animated.ScrollView
         contentContainerStyle={{ paddingBottom: 28, paddingHorizontal: 20 }}
         refreshControl={
           <RefreshControl
@@ -75,6 +77,7 @@ export default function DashboardScreen() {
             }}
           />
         }
+        style={screenStyle}
         showsVerticalScrollIndicator={false}>
         <Animated.View entering={FadeInUp.duration(500)}>
           <AppHeader />
@@ -159,7 +162,7 @@ export default function DashboardScreen() {
             <TemperatureChart values={temperatureHistory} />
           </Card>
         </Animated.View>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }
