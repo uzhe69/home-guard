@@ -145,7 +145,9 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       if (result.action === 'opened' && result.deviceType === 'stove') void getStoveSnapshot(settings.stoveDeviceId).then(setStove);
     });
     if (settings.setupComplete && settings.notificationsEnabled) {
-      void configureNotifications();
+      void configureNotifications().then((allowed) => {
+        if (!allowed) void updateSettings({ notificationsEnabled: false }).then(setSettings);
+      });
       void processLastNotificationResponse();
     }
     return () => subscription.remove();
@@ -165,11 +167,22 @@ export function AppProvider({ children }: React.PropsWithChildren) {
 
   const patchSettings = useCallback(
     async (patch: Partial<HomeSettings>) => {
-      const next = await updateSettings(patch);
+      const notificationsAllowed = patch.notificationsEnabled === true
+        ? await configureNotifications()
+        : patch.notificationsEnabled;
+      const next = await updateSettings({
+        ...patch,
+        ...(notificationsAllowed === false && { notificationsEnabled: false }),
+      });
       setSettings(next);
       if (patch.acDeviceId && patch.acDeviceId !== settings.acDeviceId) await resetAcMonitoring();
       if (patch.homeLocation) await processReturnHome(next);
-      if (patch.notificationsEnabled === false) await cancelAcReminders();
+      if (next.notificationsEnabled === false) {
+        await Promise.all([
+          cancelAcReminders(),
+          cancelStoveReminders(next.stoveDeviceId),
+        ]);
+      }
       if (next.setupComplete && next.homeLocation) {
         void startHomeGeofence(next).catch(() => undefined);
       }
@@ -192,9 +205,16 @@ export function AppProvider({ children }: React.PropsWithChildren) {
 
   const finishSetup = useCallback(
     async (patch: Partial<HomeSettings>) => {
-      const next = await updateSettings({ ...patch, setupComplete: true });
+      const wantsNotifications = patch.notificationsEnabled ?? settings.notificationsEnabled;
+      const notificationsEnabled = wantsNotifications
+        ? await configureNotifications()
+        : false;
+      const next = await updateSettings({
+        ...patch,
+        notificationsEnabled,
+        setupComplete: true,
+      });
       setSettings(next);
-      if (next.notificationsEnabled) await configureNotifications();
       if (next.homeLocation) await startHomeGeofence(next).catch(() => undefined);
     },
     [settings],
@@ -239,7 +259,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
   );
 
   const sendTestReminder = useCallback(async () => {
-    await configureNotifications();
+    if (!(await configureNotifications())) throw new Error('Notification access is disabled in system settings.');
     await sendAcReminderNow({
       temperatureCelsius: device.roomTemperatureCelsius,
       deviceId: settings.acDeviceId,
@@ -247,7 +267,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
   }, [device.roomTemperatureCelsius, settings.acDeviceId]);
 
   const sendTestStoveReminder = useCallback(async () => {
-    await configureNotifications();
+    if (!(await configureNotifications())) throw new Error('Notification access is disabled in system settings.');
     await scheduleStoveReminder({
       deviceId: settings.stoveDeviceId,
       reason: 'inactivity',

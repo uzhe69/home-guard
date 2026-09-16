@@ -46,6 +46,10 @@ function hasNotificationPermission(
   );
 }
 
+async function allowsNotificationsAsync() {
+  return hasNotificationPermission(await Notifications.getPermissionsAsync());
+}
+
 export async function configureNotifications(): Promise<boolean> {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -73,8 +77,7 @@ export async function configureNotifications(): Promise<boolean> {
     ]),
   ]);
 
-  const currentPermissions = await Notifications.getPermissionsAsync();
-  if (hasNotificationPermission(currentPermissions)) {
+  if (await allowsNotificationsAsync()) {
     return true;
   }
 
@@ -93,7 +96,11 @@ export async function scheduleAcReminder({
   deviceId,
   delayMinutes = 0,
   powerConfirmed = false,
-}: ScheduleAcReminderOptions): Promise<string> {
+}: ScheduleAcReminderOptions): Promise<string | null> {
+  if (!(await allowsNotificationsAsync())) {
+    return null;
+  }
+
   const delaySeconds = Math.max(0, Math.round(delayMinutes * 60));
 
   return Notifications.scheduleNotificationAsync({
@@ -123,12 +130,16 @@ export async function cancelAcReminders() {
   ]);
 }
 
-export function scheduleStoveReminder({
+export async function scheduleStoveReminder({
   deviceId,
   reason,
   inactiveMinutes = 0,
   delayMinutes = 0,
-}: ScheduleStoveReminderOptions): Promise<string> {
+}: ScheduleStoveReminderOptions): Promise<string | null> {
+  if (!(await allowsNotificationsAsync())) {
+    return null;
+  }
+
   const body =
     reason === 'away'
       ? 'The stove was hot when your phone left the home radius. Check it in person.'

@@ -287,8 +287,8 @@ export function evaluateAcMonitoring() {
     if (state.status === 'likely-on' && settings.notificationsEnabled && !departure.alertSent && snapshot) {
       const current = await loadSettings();
       if (current.phoneDepartedAt === departure.departedAt && current.notificationsEnabled && current.acDeviceId === departure.deviceId && current.temperatureThresholdCelsius === threshold && current.acDelayMode === settings.acDelayMode && current.reminderDelayMinutes === settings.reminderDelayMinutes) {
-        await sendAcReminderNow({ deviceId: departure.deviceId, temperatureCelsius: snapshot.roomTemperatureCelsius, powerConfirmed: power === 'ON' });
-        departure.alertSent = true;
+        const notificationId = await sendAcReminderNow({ deviceId: departure.deviceId, temperatureCelsius: snapshot.roomTemperatureCelsius, powerConfirmed: power === 'ON' });
+        departure.alertSent = notificationId !== null;
         const afterAlert = await loadSettings();
         if (afterAlert.phoneDepartedAt !== departure.departedAt || !afterAlert.notificationsEnabled) await cancelAcReminders();
       }
