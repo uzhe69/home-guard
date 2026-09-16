@@ -348,6 +348,8 @@ export async function sendDeviceCommand(
     mockAcSnapshot = {
       ...mockAcSnapshot,
       deviceId,
+      powerState: value,
+      powerStateUpdatedAt: Date.now(),
       lastCommand: command,
       lastSeenAt: Date.now(),
     };

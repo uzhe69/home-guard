@@ -32,6 +32,7 @@ export default function DashboardScreen() {
   const {
     temperature,
     temperatureHistory,
+    acPowerState,
     connectionStatus,
     lastCommandLabel,
     lastUpdatedLabel,
@@ -42,6 +43,22 @@ export default function DashboardScreen() {
   } = useApp();
   const [refreshing, setRefreshing] = React.useState(false);
   const [sending, setSending] = React.useState(false);
+  const acStatusLabel =
+    acPowerState === 'ON'
+      ? 'On'
+      : acPowerState === 'OFF'
+        ? 'Off'
+        : acMonitoring.status === 'likely-on'
+          ? 'Likely on'
+          : acMonitoring.status === 'warming'
+            ? 'Room warming'
+            : acMonitoring.status === 'off'
+              ? 'No alert needed'
+              : acMonitoring.status === 'waiting'
+                ? 'Observing'
+                : acMonitoring.status === 'home'
+                  ? 'Ready'
+                  : 'Unable to verify';
 
   return (
     <SafeAreaView className="flex-1 bg-canvas" edges={['top']}>
@@ -106,7 +123,7 @@ export default function DashboardScreen() {
               <ThermometerSnowflake color={colors.primary} size={20} />
             </View>
             <Text className="mt-3 text-[13px] text-slate">AC likelihood</Text>
-            <Text className="mt-0.5 text-[16px] font-bold text-ink">{acMonitoring.status === 'likely-on' ? 'Likely on' : acMonitoring.status === 'warming' ? 'Room warming' : acMonitoring.status === 'off' ? 'No alert needed' : acMonitoring.status === 'waiting' ? 'Observing' : 'Unable to verify AC status'}</Text>
+            <Text className="mt-0.5 text-[16px] font-bold text-ink">{acStatusLabel}</Text>
           </Card>
           <Card className="flex-1 p-4">
             <View className="h-10 w-10 items-center justify-center rounded-[13px] bg-mint">

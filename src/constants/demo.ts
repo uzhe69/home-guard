@@ -24,8 +24,8 @@ export const DEMO_AC_SNAPSHOT: AcDeviceSnapshot = {
   deviceId: DEFAULT_SETTINGS.acDeviceId,
   deviceType: 'ac',
   roomTemperatureCelsius: 22.4,
-  powerState: null,
-  powerStateUpdatedAt: null,
+  powerState: 'ON',
+  powerStateUpdatedAt: Date.now() - 60_000,
   connectionStatus: 'online',
   lastSeenAt: Date.now() - 60_000,
   lastCommand: {

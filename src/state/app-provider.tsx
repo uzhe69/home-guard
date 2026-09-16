@@ -44,6 +44,7 @@ type AppContextValue = {
   settings: HomeSettings;
   temperature: number;
   temperatureHistory: number[];
+  acPowerState: AcDeviceSnapshot['powerState'];
   connectionStatus: AcDeviceSnapshot['connectionStatus'];
   lastCommandLabel: string;
   lastUpdatedLabel: string;
@@ -298,6 +299,7 @@ export function AppProvider({ children }: React.PropsWithChildren) {
       settings,
       temperature: device.roomTemperatureCelsius,
       temperatureHistory,
+      acPowerState: device.powerState,
       connectionStatus: device.connectionStatus,
       lastCommandLabel: device.lastCommand ? `${device.lastCommand.value} requested` : 'No command',
       lastUpdatedLabel: relativeTime(device.lastSeenAt, 'updated now'),

@@ -128,10 +128,18 @@ function geofencing() {
       GeofencingEventType: { Enter: 1, Exit: 2 },
       requestForegroundPermissionsAsync: async () => ({ granted: true }),
       requestBackgroundPermissionsAsync: async () => ({ granted: true }),
+      hasStartedLocationUpdatesAsync: async () => false,
       startGeofencingAsync: async (_, value) => { regions = value; },
     },
     'expo-task-manager': { isTaskDefined: () => false, defineTask: (_, handler) => { task = handler; } },
     '@/services/firebase': { getStoveSnapshot: async () => stove, getRoomTemperature: async () => 22 },
+    '@/services/ac-monitoring': {
+      beginAcDeparture: async () => {},
+      cancelAcDeparture: async () => {},
+      evaluateAcMonitoring: async () => ({ departure: null }),
+      loadAcMonitoringState: async () => ({ departure: null, calibration: null }),
+    },
+    '@/services/outdoor-temperature': { distanceMeters: () => 0 },
     '@/services/settings': {
       loadSettings: async () => stored,
       updateSettings: async (patch) => { stored = { ...stored, ...patch }; return stored; },
@@ -253,4 +261,18 @@ test('live stove telemetry uses infrared heat rather than active-state fallback'
   value = { stoveActive: true };
   assert.equal((await service.getStoveSnapshot(stove.deviceId)).isHot, false);
   await assert.rejects(service.sendDeviceCommand(stove.deviceId, 'OFF', 'app', 'stove'), /Only the AC/);
+});
+
+test('mock AC telemetry reports and updates its power state', async () => {
+  const service = load('src/services/firebase.ts', {
+    'firebase/app': { getApps: () => [], getApp: () => ({}), initializeApp: () => ({}) },
+    'firebase/auth': { getAuth: () => ({ currentUser: { uid: 'user' } }), signInAnonymously: async () => {} },
+    'firebase/database': {},
+    '@/constants/demo': load('src/constants/demo.ts'),
+  });
+  assert.equal((await service.getDeviceSnapshot('bedroom-ac')).powerState, 'ON');
+  await service.sendTurnOffCommand('bedroom-ac');
+  const updated = await service.getDeviceSnapshot('bedroom-ac');
+  assert.equal(updated.powerState, 'OFF');
+  assert.equal(updated.lastCommand.value, 'OFF');
 });
