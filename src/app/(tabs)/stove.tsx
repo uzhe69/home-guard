@@ -140,8 +140,6 @@ export default function StoveScreen() {
             <Button className="flex-1" label="Dismiss" onPress={() => { setDismissedRisk(riskKey); void dismissStoveAlerts(stove.deviceId); }} variant="stoveSecondary" />
           </Animated.View>
         )}
-        <Text className="mt-4 text-center text-[13px] leading-5 text-slate">Check the stove in person. Alerts cannot switch it off remotely.</Text>
-
         <Animated.View entering={FadeInDown.delay(350).duration(650)} className="mt-5">
           <Card className="border-warmLine p-5">
             <Text className="text-[18px] font-bold text-ink">One-time cooking timer</Text>
