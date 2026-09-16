@@ -9,7 +9,18 @@ import {
 } from 'lucide-react-native';
 import React from 'react';
 import { RefreshControl, ScrollView, Text, View } from 'react-native';
-import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  FadeInDown,
+  FadeInUp,
+  interpolate,
+  useAnimatedStyle,
+  useSharedValue,
+  withDelay,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { AppHeader } from '@/components/app-header';
@@ -21,13 +32,58 @@ import { dismissStoveAlerts } from '@/services/notifications';
 import { useApp } from '@/state/app-provider';
 
 function StoveStatus({ active }: { active: boolean }) {
+  const firstPulse = useSharedValue(0);
+  const secondPulse = useSharedValue(0);
+
+  React.useEffect(() => {
+    cancelAnimation(firstPulse);
+    cancelAnimation(secondPulse);
+    firstPulse.value = 0;
+    secondPulse.value = 0;
+    if (!active) return;
+
+    const createPulse = () =>
+      withRepeat(
+        withTiming(1, { duration: 1800, easing: Easing.out(Easing.cubic) }),
+        -1,
+        false,
+      );
+    firstPulse.value = createPulse();
+    secondPulse.value = withDelay(850, createPulse());
+
+    return () => {
+      cancelAnimation(firstPulse);
+      cancelAnimation(secondPulse);
+    };
+  }, [active, firstPulse, secondPulse]);
+
+  const firstPulseStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(firstPulse.value, [0, 0.25, 1], [0, 0.28, 0]),
+    transform: [{ scale: interpolate(firstPulse.value, [0, 1], [0.72, 1.28]) }],
+  }));
+  const secondPulseStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(secondPulse.value, [0, 0.25, 1], [0, 0.2, 0]),
+    transform: [{ scale: interpolate(secondPulse.value, [0, 1], [0.72, 1.28]) }],
+  }));
+  const flameStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: 1 + Math.sin(firstPulse.value * Math.PI) * 0.055 }],
+  }));
+
   return (
     <View className="items-center py-3">
       <View className="h-[188px] w-[188px] items-center justify-center rounded-full bg-warmthSoft">
+        {active && (
+          <>
+            <Animated.View className="absolute h-[132px] w-[132px] rounded-full border border-flame" style={firstPulseStyle} />
+            <Animated.View className="absolute h-[132px] w-[132px] rounded-full border border-flame" style={secondPulseStyle} />
+          </>
+        )}
         <View className="h-[142px] w-[142px] items-center justify-center rounded-full border border-warmLine bg-warmth">
-          <View className={active ? 'h-[92px] w-[92px] items-center justify-center rounded-full bg-ember' : 'h-[92px] w-[92px] items-center justify-center rounded-full bg-white'}>
+          <Animated.View
+            className={active ? 'h-[92px] w-[92px] items-center justify-center rounded-full bg-ember' : 'h-[92px] w-[92px] items-center justify-center rounded-full bg-white'}
+            style={active ? flameStyle : undefined}>
             <Flame color={active ? 'white' : colors.slate} fill={active ? 'white' : 'transparent'} size={48} strokeWidth={1.9} />
-          </View>
+          </Animated.View>
         </View>
       </View>
       <Text className="mt-5 text-[27px] font-bold tracking-[-0.8px] text-ink">
