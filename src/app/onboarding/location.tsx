@@ -96,7 +96,7 @@ export default function LocationSetupScreen() {
                 homeAddress: '18 Tampines Avenue 1, Singapore',
                 radiusMeters: radius,
               });
-              router.push('/onboarding/reminder');
+              router.push('/onboarding/stove');
             }}
           />
         </View>
