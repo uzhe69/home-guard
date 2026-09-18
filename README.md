@@ -2,6 +2,28 @@
 
 Home Guard is an iOS-first Expo app that watches a home geofence, checks connected appliance sensors, and supports remote AC control and warning-only stove alerts. It includes a complete mock mode, so the onboarding, dashboards, charts, commands, and notification flow can be demonstrated without hardware or a Firebase project.
 
+## App gallery
+
+| Guided setup | Instant demo |
+| --- | --- |
+| <img src="docs/screenshots/welcome-setup.png" width="280" alt="Home Guard welcome screen with setup and demo options"><br><sub>Tap **Set up my home** to configure the home location and connect sensors step by step.</sub> | <img src="docs/screenshots/welcome-demo.png" width="280" alt="Home Guard welcome screen with the Explore the demo option"><br><sub>Tap **Explore the demo** to try seeded AC, stove, impact, and alert states without hardware.</sub> |
+
+| Home dashboard | Kitchen watch |
+| --- | --- |
+| <img src="docs/screenshots/home-dashboard.png" width="280" alt="Home dashboard showing room temperature and AC controls"><br><sub>Check presence, room temperature, sensor recency, and likely AC status, then turn the AC off remotely.</sub> | <img src="docs/screenshots/kitchen-watch.png" width="280" alt="Kitchen Watch screen showing a hot stove and sensor readings"><br><sub>See the stove's heat state, infrared temperature, and the most recent kitchen motion reading.</sub> |
+
+| Cooking timer and safety checks | Environmental impact |
+| --- | --- |
+| <img src="docs/screenshots/cooking-timer.png" width="280" alt="Cooking timer and armed stove safety checks"><br><sub>Start a one-time timer for a longer cook while keeping departure alerts active.</sub> | <img src="docs/screenshots/impact-dashboard.png" width="280" alt="Impact dashboard with energy, cost, and carbon savings"><br><sub>Switch between time ranges to review energy, cost, and carbon savings from AC and stove interventions.</sub> |
+
+| Settings | Home geofence |
+| --- | --- |
+| <img src="docs/screenshots/settings.png" width="280" alt="Settings screen with monitoring, safety, sensor, and demo sections"><br><sub>Open grouped controls for location, AC monitoring, stove safety, sensors, alerts, and demo tools.</sub> | <img src="docs/screenshots/home-geofence.png" width="280" alt="Home setup map with a configurable geofence radius"><br><sub>Long-press the map to place the home pin, choose a radius, and confirm the geofence.</sub> |
+
+| Actionable AC alert | Stove safety alert |
+| --- | --- |
+| <img src="docs/screenshots/ac-alert.png" width="280" alt="Actionable notification warning that the AC may still be on"><br><sub>Turn the AC off from the notification or keep it running without opening the app.</sub> | <img src="docs/screenshots/stove-alert.png" width="280" alt="Notification warning that the stove is hot with no recent kitchen motion"><br><sub>Check the kitchen in person, then acknowledge the warning or dismiss the notification.</sub> |
+
 ## Stack
 
 - Expo SDK 55, React Native 0.83, TypeScript, and Expo Router
