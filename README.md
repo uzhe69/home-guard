@@ -4,9 +4,9 @@ Home Guard is an iOS-first Expo app that watches a home geofence, checks connect
 
 ## App gallery
 
-| Guided setup | Instant demo |
+| Home | Home geofence |
 | --- | --- |
-| <img src="docs/screenshots/welcome-setup.png" width="280" alt="Home Guard welcome screen with setup and demo options"><br><sub>Tap **Set up my home** to configure the home location and connect sensors step by step.</sub> | <img src="docs/screenshots/welcome-demo.png" width="280" alt="Home Guard welcome screen with the Explore the demo option"><br><sub>Tap **Explore the demo** to try seeded AC, stove, impact, and alert states without hardware.</sub> |
+| <img src="docs/screenshots/welcome-setup.png" width="280" alt="Home Guard welcome screen with setup and demo options"><br><sub>Set up a home step by step or explore the app with seeded demo data.</sub> | <img src="docs/screenshots/home-geofence.png" width="280" alt="Home setup map with a configurable geofence radius"><br><sub>Long-press the map to place the home pin, choose a radius, and confirm the geofence.</sub> |
 
 | Home dashboard | Kitchen watch |
 | --- | --- |
@@ -16,9 +16,9 @@ Home Guard is an iOS-first Expo app that watches a home geofence, checks connect
 | --- | --- |
 | <img src="docs/screenshots/cooking-timer.png" width="280" alt="Cooking timer and armed stove safety checks"><br><sub>Start a one-time timer for a longer cook while keeping departure alerts active.</sub> | <img src="docs/screenshots/impact-dashboard.png" width="280" alt="Impact dashboard with energy, cost, and carbon savings"><br><sub>Switch between time ranges to review energy, cost, and carbon savings from AC and stove interventions.</sub> |
 
-| Settings | Home geofence |
-| --- | --- |
-| <img src="docs/screenshots/settings.png" width="280" alt="Settings screen with monitoring, safety, sensor, and demo sections"><br><sub>Open grouped controls for location, AC monitoring, stove safety, sensors, alerts, and demo tools.</sub> | <img src="docs/screenshots/home-geofence.png" width="280" alt="Home setup map with a configurable geofence radius"><br><sub>Long-press the map to place the home pin, choose a radius, and confirm the geofence.</sub> |
+| Settings |
+| --- |
+| <img src="docs/screenshots/settings.png" width="280" alt="Settings screen with monitoring, safety, sensor, and demo sections"><br><sub>Open grouped controls for location, AC monitoring, stove safety, sensors, alerts, and demo tools.</sub> |
 
 | Actionable AC alert | Stove safety alert |
 | --- | --- |
