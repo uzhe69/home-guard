@@ -1,4 +1,4 @@
-import { CalendarDays, DollarSign, Leaf, Sprout } from 'lucide-react-native';
+import { CalendarDays, DollarSign, Flame, Leaf, Snowflake, Sprout } from 'lucide-react-native';
 import React, { useState } from 'react';
 import { Text, View } from 'react-native';
 import Animated, { FadeInDown, FadeInUp } from 'react-native-reanimated';
@@ -15,9 +15,9 @@ import { useScreenEntrance } from '@/lib/motion';
 type Period = 'week' | 'month' | 'all';
 
 const impact = {
-  week: { energy: 4.8, money: 1.42, carbon: 3.2, saves: 3, values: [0.3, 0.5, 1, 0.7, 0.8, 1.6, 2] },
-  month: { energy: 21.4, money: 6.33, carbon: 14.3, saves: 14, values: [1.1, 1.9, 2.3, 2.8, 3.2, 4.6, 5.5] },
-  all: { energy: 86.7, money: 25.65, carbon: 58.1, saves: 52, values: [3, 7, 12, 18, 27, 38, 52] },
+  week: { energy: 6.1, money: 1.86, carbon: 4, saves: 5, acEnergy: 4.8, stoveEnergy: 1.3, acSaves: 3, stoveSaves: 2, values: [0.5, 0.7, 1.2, 0.9, 1.1, 1.8, 2.3] },
+  month: { energy: 27.6, money: 8.42, carbon: 18.5, saves: 21, acEnergy: 21.4, stoveEnergy: 6.2, acSaves: 14, stoveSaves: 7, values: [1.5, 2.4, 3.1, 3.7, 4.2, 5.7, 7] },
+  all: { energy: 111.9, money: 34.78, carbon: 75, saves: 78, acEnergy: 86.7, stoveEnergy: 25.2, acSaves: 52, stoveSaves: 26, values: [4, 9, 16, 24, 35, 50, 69] },
 };
 
 export default function ImpactScreen() {
@@ -31,7 +31,7 @@ export default function ImpactScreen() {
         <Animated.View entering={FadeInUp.duration(500)}>
           <AppHeader />
           <Text className="text-[36px] font-bold tracking-[-1.5px] text-ink">Your impact</Text>
-          <Text className="mt-1 text-[16px] text-slate">Small actions make a cleaner tomorrow.</Text>
+          <Text className="mt-1 text-[16px] text-slate">Combined savings from AC and stove.</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.delay(80).duration(600)} className="mt-6">
@@ -54,11 +54,33 @@ export default function ImpactScreen() {
               </View>
               <View className="ml-3">
                 <AnimatedCount className="text-[32px] font-bold tracking-[-1px] text-ink" decimals={1} suffix=" kWh" value={data.energy} />
-                <Text className="mt-0.5 text-[13px] text-slate">Energy saved</Text>
+                <Text className="mt-0.5 text-[13px] text-slate">Combined energy saved</Text>
               </View>
             </View>
             <View className="mt-7">
               <ImpactChart values={data.values} />
+            </View>
+            <View className="mt-6 border-t border-line pt-5">
+              <View className="flex-row items-center">
+                <View className="h-9 w-9 items-center justify-center rounded-[12px] bg-mint">
+                  <Snowflake color={colors.primary} size={18} />
+                </View>
+                <View className="ml-3 flex-1">
+                  <Text className="text-[14px] font-semibold text-ink">AC cooling</Text>
+                  <Text className="mt-0.5 text-[11px] text-slate">{data.acSaves} smart saves</Text>
+                </View>
+                <Text className="text-[14px] font-bold text-primary">{data.acEnergy.toFixed(1)} kWh</Text>
+              </View>
+              <View className="mt-3 flex-row items-center">
+                <View className="h-9 w-9 items-center justify-center rounded-[12px] bg-warmth">
+                  <Flame color={colors.ember} size={18} />
+                </View>
+                <View className="ml-3 flex-1">
+                  <Text className="text-[14px] font-semibold text-ink">Gas stove</Text>
+                  <Text className="mt-0.5 text-[11px] text-slate">{data.stoveSaves} smart saves</Text>
+                </View>
+                <Text className="text-[14px] font-bold text-ember">{data.stoveEnergy.toFixed(1)} kWh</Text>
+              </View>
             </View>
           </Card>
         </Animated.View>
@@ -86,8 +108,8 @@ export default function ImpactScreen() {
               <CalendarDays color={colors.primary} size={23} />
             </View>
             <View className="ml-3 flex-1">
-              <Text className="text-[15px] font-bold text-ink">{data.saves} smart saves</Text>
-              <Text className="mt-0.5 text-[13px] text-slate">A cooler home and a lighter footprint.</Text>
+              <Text className="text-[15px] font-bold text-ink">{data.saves} smart interventions</Text>
+              <Text className="mt-0.5 text-[13px] text-slate">Cooling and cooking waste avoided.</Text>
             </View>
             <View className="flex-row gap-1.5">
               {[0, 1, 2, 3].map((dot) => (
